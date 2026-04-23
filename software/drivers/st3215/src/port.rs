@@ -687,7 +687,7 @@ impl St3215Port {
                 return Ok(true);
             }
 
-            info!(
+            debug!(
                 "Processing ST3215 SyncWrite command - Address: 0x{:02X}, Motors: {}",
                 sync_write_cmd.address,
                 sync_write_cmd.motors.len()
@@ -706,7 +706,7 @@ impl St3215Port {
 
             // Use async_write since SyncWrite doesn't expect individual responses
             request.async_write(port, ST3215_COMMAND_TIMEOUT_MS).await?;
-            info!(
+            debug!(
                 "ST3215 SyncWrite command completed - {} motors updated",
                 sync_write_cmd.motors.len()
             );

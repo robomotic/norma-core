@@ -35,6 +35,10 @@ lazy_static::lazy_static! {
     static ref FRAME_STATS: Mutex<FrameSkipStats> = Mutex::new(FrameSkipStats::default());
 }
 
+// Latched at the first `no_bus` skip so we don't spam the log every frame.
+// Cleared once the bus is resolved again — so a subsequent disappearance warns fresh.
+static NO_BUS_WARNED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
 impl FrameSkipStats {
     fn reset(&mut self) {
         *self = FrameSkipStats::default();
@@ -180,6 +184,12 @@ pub async fn generate_frame(
 
     // Skip frame if no images (cannot infer without images)
     if images.is_empty() {
+        log::info!(
+            "Skip: no_images (inference_stamp_ns={}, entries={}, joints={})",
+            inference_rx.monotonic_stamp_ns,
+            inference_rx.entries.len(),
+            joints.len()
+        );
         FRAME_STATS.lock().unwrap().skipped_no_images += 1;
         return Ok(());
     }
@@ -259,6 +269,17 @@ fn parse_joints(
         match find_single_torque_enabled_bus(inference_state) {
             Some(bus) => bus,
             None => {
+                if !NO_BUS_WARNED.swap(true, std::sync::atomic::Ordering::Relaxed) {
+                    let bus_list: Vec<_> = inference_state.buses.iter().map(|b| {
+                        let serial = b.bus.as_ref().map(|x| x.serial_number.as_str()).unwrap_or("");
+                        let torque = bus_has_torque_enabled(b);
+                        format!("{}(torque={})", serial, torque)
+                    }).collect();
+                    log::warn!(
+                        "Skip: no_bus (auto mode — zero or multiple buses with torque: [{}])",
+                        bus_list.join(", ")
+                    );
+                }
                 FRAME_STATS.lock().unwrap().skipped_no_bus += 1;
                 return None;
             }
@@ -278,6 +299,13 @@ fn parse_joints(
         // Check bus timestamp synchronization
         // Bus timestamp must be <= inference timestamp (cannot be in the future)
         if bus.monotonic_stamp_ns > inference_stamp_ns {
+            log::info!(
+                "Skip: bus_ahead (bus={} bus_stamp_ns={} inference_stamp_ns={} ahead_by_ms={})",
+                bus_serial,
+                bus.monotonic_stamp_ns,
+                inference_stamp_ns,
+                (bus.monotonic_stamp_ns - inference_stamp_ns) / 1_000_000
+            );
             FRAME_STATS.lock().unwrap().skipped_bus_ahead += 1;
             return None;
         }
@@ -294,6 +322,14 @@ fn parse_joints(
         }
 
         if bus_stamp_diff > MAX_STAMP_DIFF_NS {
+            log::info!(
+                "Skip: bus_diff (bus={} diff_ms={} limit_ms={} bus_stamp_ns={} inference_stamp_ns={})",
+                bus_serial,
+                bus_stamp_diff_ms,
+                MAX_STAMP_DIFF_NS / 1_000_000,
+                bus.monotonic_stamp_ns,
+                inference_stamp_ns
+            );
             FRAME_STATS.lock().unwrap().skipped_bus_large_diff += 1;
             return None;
         }
@@ -307,18 +343,31 @@ fn parse_joints(
 
             // Check for invalid range
             if motor.range_min == motor.range_max {
+                log::info!(
+                    "Skip: invalid_range (bus={} motor={} range_min={} range_max={})",
+                    bus_serial, motor.id, motor.range_min, motor.range_max
+                );
                 FRAME_STATS.lock().unwrap().skipped_invalid_range += 1;
                 return None;
             }
 
             // Check for motor error
             if is_motor_error(state_bytes) {
+                log::info!(
+                    "Skip: motor_error (bus={} motor={})",
+                    bus_serial, motor.id
+                );
                 FRAME_STATS.lock().unwrap().skipped_motor_error += 1;
                 return None;
             }
 
             // Check motor timestamp - must not be ahead of inference timestamp
             if motor.monotonic_stamp_ns > inference_stamp_ns {
+                log::info!(
+                    "Skip: motor_ahead (bus={} motor={} motor_stamp_ns={} inference_stamp_ns={} ahead_by_ms={})",
+                    bus_serial, motor.id, motor.monotonic_stamp_ns, inference_stamp_ns,
+                    (motor.monotonic_stamp_ns - inference_stamp_ns) / 1_000_000
+                );
                 FRAME_STATS.lock().unwrap().skipped_motor_ahead += 1;
                 return None;
             }
@@ -336,6 +385,12 @@ fn parse_joints(
             }
 
             if motor_stamp_diff > MAX_STAMP_DIFF_NS {
+                log::info!(
+                    "Skip: motor_diff (bus={} motor={} diff_ms={} limit_ms={} motor_stamp_ns={} inference_stamp_ns={})",
+                    bus_serial, motor.id, motor_stamp_diff_ms,
+                    MAX_STAMP_DIFF_NS / 1_000_000,
+                    motor.monotonic_stamp_ns, inference_stamp_ns
+                );
                 FRAME_STATS.lock().unwrap().skipped_motor_large_diff += 1;
                 return None;
             }
@@ -373,9 +428,21 @@ fn parse_joints(
 
     // Skip frame if no joints were found (target bus not present)
     if joints.is_empty() {
+        if !NO_BUS_WARNED.swap(true, std::sync::atomic::Ordering::Relaxed) {
+            let available: Vec<_> = inference_state.buses.iter()
+                .filter_map(|b| b.bus.as_ref().map(|x| x.serial_number.clone()))
+                .collect();
+            log::warn!(
+                "Skip: no_bus (resolved_bus={} target_bus={} available=[{}])",
+                resolved_bus, target_bus, available.join(", ")
+            );
+        }
         FRAME_STATS.lock().unwrap().skipped_no_bus += 1;
         return None;
     }
+
+    // Bus resolved and produced joints — clear the latch so future disappearances warn afresh.
+    NO_BUS_WARNED.store(false, std::sync::atomic::Ordering::Relaxed);
 
     // Skip frame if no motors have torque enabled
     if !any_torque_enabled {
@@ -416,6 +483,11 @@ fn parse_usb_video_frames(
 
     // Frame timestamp must not be ahead of inference timestamp
     if frame_stamp_ns > inference_stamp_ns {
+        log::info!(
+            "Skip: video_ahead (frame_stamp_ns={} inference_stamp_ns={} ahead_by_ms={})",
+            frame_stamp_ns, inference_stamp_ns,
+            (frame_stamp_ns - inference_stamp_ns) / 1_000_000
+        );
         FRAME_STATS.lock().unwrap().skipped_video_ahead += 1;
         return None;
     }
@@ -433,6 +505,11 @@ fn parse_usb_video_frames(
     }
 
     if stamp_diff > MAX_STAMP_DIFF_NS {
+        log::info!(
+            "Skip: video_diff (diff_ms={} limit_ms={} frame_stamp_ns={} inference_stamp_ns={})",
+            stamp_diff_ms, MAX_STAMP_DIFF_NS / 1_000_000,
+            frame_stamp_ns, inference_stamp_ns
+        );
         FRAME_STATS.lock().unwrap().skipped_video_large_diff += 1;
         return None;
     }

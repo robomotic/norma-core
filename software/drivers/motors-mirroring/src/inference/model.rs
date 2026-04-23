@@ -27,6 +27,7 @@ pub struct MotorState {
     pub range_max: u16,
     pub range_freezed: bool,
     pub error: bool,
+    pub error_status: u8,
     pub current: u16,
     pub current_limit: u16,
 
@@ -130,6 +131,7 @@ impl StationState {
 
                 let status = state_bytes[STATUS_REGISTER as usize];
                 motor_state.error = status != 0;
+                motor_state.error_status = status;
 
                 // Use helper functions from st3215
                 motor_state.present_position = get_motor_position(state_bytes);

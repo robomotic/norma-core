@@ -192,7 +192,8 @@ impl Inference {
 
         let mut delays_us: std::collections::VecDeque<u64> = std::collections::VecDeque::new();
         let mut last_stats_print = std::time::Instant::now();
-        let stats_interval = std::time::Duration::from_secs(5);
+        // Match inference frame-stats cadence: 100 frames * 100ms/frame = 10s.
+        let stats_interval = std::time::Duration::from_secs(10);
 
         let mut mirroring_states: std::collections::HashMap<BusKey, bool> = std::collections::HashMap::new();
 
@@ -262,8 +263,8 @@ impl Inference {
                 }
             }
 
-            // Keep only recent samples (max 250 for 5 seconds at 20ms intervals)
-            while delays_us.len() > 250 {
+            // Keep only recent samples (max 500 for 10 seconds at 20ms intervals)
+            while delays_us.len() > 500 {
                 delays_us.pop_front();
             }
 

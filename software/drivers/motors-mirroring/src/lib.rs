@@ -174,7 +174,7 @@ fn merge_modes(
         normfs: &Arc<NormFS>,
         rx_queue_id: &normfs::QueueId,
     ) {
-        log::info!("Received command pack: {:?}", pack.pack_id);
+        log::debug!("Received command pack: {:?}", pack.pack_id);
 
         for command in &pack.commands {
             let command_type = command.r#type();

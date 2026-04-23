@@ -63,8 +63,20 @@ pub fn get_movement_sequence_with_goal(
         config,
     );
 
-    if source.error {
-        log::warn!("Skipping mirroring for motor {} on bus {} due to error state [source={}, target={}], curr = {}, limit = {}", motor_id, target_bus_id, source.error, target.error, source.current, source.current_limit);
+    // Voltage faults on the leader are common (rail dips under load) and shouldn't
+    // stop mirroring — mask bit 0 before gating.
+    const MIRRORING_IGNORED_BITS: u8 = 0x01; // Voltage
+    let blocking_source = source.error_status & !MIRRORING_IGNORED_BITS;
+    if blocking_source != 0 {
+        let source_errors = st3215::protocol::ServoError::from_bits(source.error_status);
+        let target_errors = st3215::protocol::ServoError::from_bits(target.error_status);
+        log::warn!(
+            "Skipping mirroring for motor {} on bus {} due to error state [source=0x{:02X} {:?}, target=0x{:02X} {:?}], curr = {}, limit = {}",
+            motor_id, target_bus_id,
+            source.error_status, source_errors,
+            target.error_status, target_errors,
+            source.current, source.current_limit
+        );
         return;
     }
     if source.present_position == 0 || target.present_position == 0 {
