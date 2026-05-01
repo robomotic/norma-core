@@ -1,14 +1,17 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
-import { st3215, usbvideo, motors_mirroring } from "../api/proto";
-import BusWebGLRenderer from "./BusWebGLRenderer";
-import CameraViewer from "../usbvideo/CameraViewer";
-import { serverToLocal } from "../api/timestamp-utils";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Long from "long";
+import { Link } from "react-router-dom";
 import { commandManager } from "../api/commands";
-import { getMotorPosition } from "./motor-parser";
-import MotorDataTable from "./MotorDataTable";
+import { FrameEntry } from "../api/frame-parser";
+import { motors_mirroring, st3215, usbvideo } from "../api/proto";
+import { serverToLocal } from "../api/timestamp-utils";
 import { getLatencyBgColor, getLatencyTextColor } from "@/utils/color-utils";
+import { getVideoSourceId, getVideoSourceLabel } from "../usbvideo/camera-source";
+import CameraViewer from "../usbvideo/CameraViewer";
+import RobotCameraView from "../usbvideo/RobotCameraView";
+import BusWebGLRenderer from "./BusWebGLRenderer";
+import MotorDataTable from "./MotorDataTable";
+import { ADDR_GOAL_POSITION, getMotorPosition } from "./motor-parser";
 
 interface LatencyReading {
   timestamp: number;
@@ -24,7 +27,7 @@ interface LatencyStats {
 const STALE_CAMERA_MAX_AGE_MS = 60_000;
 const MIN_CALIBRATED_RANGE = 100;
 
-import { FrameEntry } from "../api/frame-parser";
+type RobotViewMode = "model" | "camera";
 
 interface BusCardProps {
   bus: st3215.InferenceState.IBusState;
@@ -42,9 +45,10 @@ const BusCard: React.FC<BusCardProps> = ({
   mirroringState,
 }) => {
   const latencyHistoryRef = useRef<Map<string, LatencyReading[]>>(new Map());
-  const [selectedVideoSourceId, setSelectedVideoSourceId] = useState<
-    string | null
-  >(null);
+  const [primaryVideoSourceId, setPrimaryVideoSourceId] = useState<string | null>(null);
+  const [secondaryVideoSourceId, setSecondaryVideoSourceId] = useState<string | null>(null);
+  const [hasPrimaryVideoSourcePreference, setHasPrimaryVideoSourcePreference] = useState(false);
+  const [viewMode, setViewMode] = useState<RobotViewMode>("model");
   const [isWebControlled, setIsWebControlled] = useState(false);
 
   const activeVideoSources = useMemo(() => {
@@ -67,23 +71,60 @@ const BusCard: React.FC<BusCardProps> = ({
     });
   }, [videoSources]);
 
-  const selectedVideoSource = activeVideoSources.find(
-    (entry) => entry.data.camera?.uniqueId === selectedVideoSourceId,
+  const primaryVideoSource = activeVideoSources.find(
+    (entry) => getVideoSourceId(entry) === primaryVideoSourceId,
   )?.data;
 
+  const secondaryVideoSource = activeVideoSources.find(
+    (entry) => getVideoSourceId(entry) === secondaryVideoSourceId,
+  )?.data;
+
+  const activeVideoSourceIds = useMemo(
+    () => activeVideoSources.map(getVideoSourceId),
+    [activeVideoSources],
+  );
+  const firstActiveVideoSourceId = activeVideoSourceIds[0] ?? null;
+
   useEffect(() => {
-    if (!selectedVideoSourceId) {
+    if (primaryVideoSourceId && !activeVideoSourceIds.includes(primaryVideoSourceId)) {
+      setPrimaryVideoSourceId(null);
+      setHasPrimaryVideoSourcePreference(false);
+    }
+
+    if (!primaryVideoSourceId && firstActiveVideoSourceId && !hasPrimaryVideoSourcePreference) {
+      setPrimaryVideoSourceId(firstActiveVideoSourceId);
+    }
+
+    if (
+      secondaryVideoSourceId &&
+      (!activeVideoSourceIds.includes(secondaryVideoSourceId) || secondaryVideoSourceId === primaryVideoSourceId)
+    ) {
+      setSecondaryVideoSourceId(null);
+    }
+  }, [
+    activeVideoSourceIds,
+    firstActiveVideoSourceId,
+    hasPrimaryVideoSourcePreference,
+    primaryVideoSourceId,
+    secondaryVideoSourceId,
+  ]);
+
+  const handlePrimaryVideoSourceChange = useCallback((sourceId: string | null) => {
+    // Keep this sticky even for "None" so an explicit user clear is not auto-filled again.
+    setHasPrimaryVideoSourcePreference(true);
+    setPrimaryVideoSourceId(sourceId);
+    if (sourceId && sourceId === secondaryVideoSourceId) {
+      setSecondaryVideoSourceId(null);
+    }
+  }, [secondaryVideoSourceId]);
+
+  const handleSecondaryVideoSourceChange = useCallback((sourceId: string | null) => {
+    if (sourceId && sourceId === primaryVideoSourceId) {
       return;
     }
 
-    const hasSelectedSource = activeVideoSources.some(
-      (entry) => entry.data.camera?.uniqueId === selectedVideoSourceId,
-    );
-
-    if (!hasSelectedSource) {
-      setSelectedVideoSourceId(null);
-    }
-  }, [activeVideoSources, selectedVideoSourceId]);
+    setSecondaryVideoSourceId(sourceId);
+  }, [primaryVideoSourceId]);
 
   const handleControlSourceChange = async (sourceBusSerial: string | null) => {
     if (!bus.bus?.serialNumber) {
@@ -92,13 +133,12 @@ const BusCard: React.FC<BusCardProps> = ({
 
     // Handle Web-controlled mode
     if (sourceBusSerial === "web-controlled") {
-      setIsWebControlled(true);
-
-      // Stop any existing mirroring
       const target: motors_mirroring.IMirroringBus = {
         type: motors_mirroring.BusType.MBT_ST3215,
         uniqueId: bus.bus.serialNumber,
       };
+
+      // Stop any existing mirroring
       await commandManager.sendMirroringCommand({
         type: motors_mirroring.CommandType.CT_STOP_MIRROR,
         source: target,
@@ -116,7 +156,7 @@ const BusCard: React.FC<BusCardProps> = ({
               targetBusSerial: bus.bus?.serialNumber,
               write: {
                 motorId: motor.id,
-                address: 0x2a, // Target position address
+                address: ADDR_GOAL_POSITION,
                 value: new Uint8Array([
                   currentPosition & 0xff,
                   (currentPosition >> 8) & 0xff,
@@ -131,32 +171,8 @@ const BusCard: React.FC<BusCardProps> = ({
         }
       }
 
+      setIsWebControlled(true);
       return;
-    }
-
-    // Disable web control if switching to other modes
-    if (isWebControlled) {
-      // Unfreeze all motors when leaving web-controlled mode
-      if (bus.motors) {
-        const commands = [];
-        for (const motor of bus.motors) {
-          if (motor.id !== null && motor.id !== undefined) {
-            // Send command to unfreeze motor
-            const command = st3215.Command.create({
-              targetBusSerial: bus.bus?.serialNumber,
-              write: {
-                motorId: motor.id,
-                address: 0x28, // Unfreeze address
-                value: new Uint8Array([0]),
-              },
-            });
-            commands.push(command);
-          }
-        }
-        if (commands.length > 0) {
-          await commandManager.sendSt3215Commands(commands);
-        }
-      }
     }
 
     setIsWebControlled(false);
@@ -240,6 +256,8 @@ const BusCard: React.FC<BusCardProps> = ({
         (motor.rangeMax ?? 0) - (motor.rangeMin ?? 0) < MIN_CALIBRATED_RANGE,
     );
   const needsCalibration = hasMotors && (hasUnfrozenMotor || hasNarrowRange);
+  const canRender3d = [6, 8].includes(bus.motors?.length || 0);
+  const canShowCamera = activeVideoSources.length > 0;
 
   return (
     <div className="border border-border-default rounded-lg bg-surface-primary/50 min-w-[300px]">
@@ -249,6 +267,24 @@ const BusCard: React.FC<BusCardProps> = ({
           <span className="font-bold text-lg text-accent-data">
             #{bus.bus?.serialNumber}
           </span>
+          <div className="flex rounded-md border border-border-subtle bg-surface-primary p-0.5 text-xs font-bold uppercase tracking-wide">
+            <button
+              type="button"
+              onClick={() => setViewMode("model")}
+              className={`rounded px-2 py-1 transition-colors ${viewMode === "model" ? "bg-accent-success-bg text-text-primary" : "text-text-muted hover:text-text-primary"}`}
+            >
+              3D
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("camera")}
+              disabled={!canShowCamera}
+              className={`rounded px-2 py-1 transition-colors disabled:cursor-not-allowed disabled:text-text-muted ${viewMode === "camera" ? "bg-accent-data text-surface-base" : "text-text-muted hover:text-text-primary"}`}
+              title={canShowCamera ? "Camera-first robot view" : "No active cameras"}
+            >
+              Camera
+            </button>
+          </div>
           <select
             value={
               isWebControlled
@@ -279,21 +315,53 @@ const BusCard: React.FC<BusCardProps> = ({
             })}
           </select>
           <select
-            value={selectedVideoSourceId ?? ""}
-            onChange={(e) => setSelectedVideoSourceId(e.target.value || null)}
-            className="block pl-3 pr-10 py-1 text-base border-border-subtle bg-surface-secondary text-text-primary focus:outline-none focus:ring-accent-success-deep focus:border-accent-success-deep sm:text-sm rounded-md max-w-[180px]"
+            value={primaryVideoSourceId ?? ""}
+            onChange={(e) => handlePrimaryVideoSourceChange(e.target.value || null)}
+            className="block pl-3 pr-10 py-1 text-base border-border-subtle bg-surface-secondary text-text-primary focus:outline-none focus:ring-accent-success-deep focus:border-accent-success-deep sm:text-sm rounded-md max-w-[220px]"
+            title="Main camera"
           >
-            <option value="">No Video</option>
-            {activeVideoSources.map((entry) => (
-              <option
-                key={`${entry.queueId}-${entry.data.camera?.uniqueId || "unknown-camera"}`}
-                value={entry.data.camera?.uniqueId || ""}
-                title={`${entry.data.camera?.deviceNumber} (${entry.data.camera?.uniqueId})`}
-              >
-                {entry.data.camera?.deviceNumber} ({entry.data.camera?.uniqueId})
-              </option>
-            ))}
+            <option value="">Main Cam: None</option>
+            {activeVideoSources
+              .filter((entry) => getVideoSourceId(entry) !== secondaryVideoSourceId)
+              .map((entry) => {
+                const sourceId = getVideoSourceId(entry);
+                const label = getVideoSourceLabel(entry);
+                return (
+                  <option
+                    key={`${entry.queueId}-${sourceId}`}
+                    value={sourceId}
+                    title={label}
+                  >
+                    Main: {label}
+                  </option>
+                );
+              })}
           </select>
+          {viewMode === "camera" && (
+            <select
+              value={secondaryVideoSourceId ?? ""}
+              onChange={(e) => handleSecondaryVideoSourceChange(e.target.value || null)}
+              className="block pl-3 pr-10 py-1 text-base border-border-subtle bg-surface-secondary text-text-primary focus:outline-none focus:ring-accent-success-deep focus:border-accent-success-deep sm:text-sm rounded-md max-w-[220px]"
+              title="Picture-in-picture camera"
+            >
+              <option value="">PIP Cam: None</option>
+              {activeVideoSources
+                .filter((entry) => getVideoSourceId(entry) !== primaryVideoSourceId)
+                .map((entry) => {
+                  const sourceId = getVideoSourceId(entry);
+                  const label = getVideoSourceLabel(entry);
+                  return (
+                    <option
+                      key={`${entry.queueId}-${sourceId}`}
+                      value={sourceId}
+                      title={label}
+                    >
+                      PiP: {label}
+                    </option>
+                  );
+                })}
+            </select>
+          )}
         </div>
         <div className="flex items-center gap-4 text-sm">
           <div className="flex items-center gap-1.5">
@@ -312,73 +380,84 @@ const BusCard: React.FC<BusCardProps> = ({
       </div>
 
       {/* Content */}
-      {[6, 8].includes(bus.motors?.length || 0) ? (
-        <div className="relative h-180">
+      <div className="relative h-180">
+        {viewMode === "camera" ? (
+          <RobotCameraView
+            primaryVideoSource={primaryVideoSource}
+            secondaryVideoSource={secondaryVideoSource}
+            bus={bus}
+            busIndex={busIndex}
+            showMotorData={true}
+            showCalibrateButton={true}
+            needsCalibration={needsCalibration}
+            isWebControlled={isWebControlled}
+          />
+        ) : canRender3d ? (
           <BusWebGLRenderer
             busSerialNumber={bus.bus?.serialNumber}
             bus={bus}
             busIndex={busIndex}
             showMotorData={true}
-            selectedVideoSource={selectedVideoSource}
+            selectedVideoSource={primaryVideoSource}
             showCalibrateButton={true}
             needsCalibration={needsCalibration}
             isWebControlled={isWebControlled}
           />
-        </div>
-      ) : (
-        <div className="relative h-180">
-          <div className="absolute inset-0 p-4 flex flex-col items-center justify-center bg-surface-primary/20">
-            <p className="text-accent-warning mb-4 text-center">
-              {(bus.motors?.length || 0) === 0 ? (
-                <>No motors connected to this bus.</>
-              ) : (
-                <>
-                  3D model visualization is only available for 6 or 8-motor
-                  configurations.
-                  <br />
-                  This bus has {bus.motors?.length} motor
-                  {bus.motors?.length === 1 ? "" : "s"}.
-                </>
-              )}
-            </p>
-            <div className="flex gap-4">
-              {(bus.motors?.length || 0) > 1 && (
-                <Link
-                  to="/st3215-bus-calibration"
-                  state={{ bus }}
-                  className={`px-4 py-2 rounded text-base font-bold transition-colors bg-accent-success-bg text-text-primary hover:bg-accent-success-deep ${needsCalibration ? "ring-4 ring-accent-success-deep/50 scale-110" : ""}`}
-                >
-                  Calibrate
-                </Link>
-              )}
-              {bus.motors?.length === 1 && (
-                <Link
-                  to={`/st3215-bind-motors`}
-                  state={{ bus }}
-                  className="bg-accent-info-bg hover:bg-accent-info-deep px-4 py-2 rounded text-text-primary transition-colors"
-                  title="Configure motor ID"
-                >
-                  Configure Motor ID
-                </Link>
-              )}
+        ) : (
+          <>
+            <div className="absolute inset-0 p-4 flex flex-col items-center justify-center bg-surface-primary/20">
+              <p className="text-accent-warning mb-4 text-center">
+                {(bus.motors?.length || 0) === 0 ? (
+                  <>No motors connected to this bus.</>
+                ) : (
+                  <>
+                    3D model visualization is only available for 6 or 8-motor
+                    configurations.
+                    <br />
+                    This bus has {bus.motors?.length} motor
+                    {bus.motors?.length === 1 ? "" : "s"}.
+                  </>
+                )}
+              </p>
+              <div className="flex gap-4">
+                {(bus.motors?.length || 0) > 1 && (
+                  <Link
+                    to="/st3215-bus-calibration"
+                    state={{ bus }}
+                    className={`px-4 py-2 rounded text-base font-bold transition-colors bg-accent-success-bg text-text-primary hover:bg-accent-success-deep ${needsCalibration ? "ring-4 ring-accent-success-deep/50 scale-110" : ""}`}
+                  >
+                    Calibrate
+                  </Link>
+                )}
+                {bus.motors?.length === 1 && (
+                  <Link
+                    to={`/st3215-bind-motors`}
+                    state={{ bus }}
+                    className="bg-accent-info-bg hover:bg-accent-info-deep px-4 py-2 rounded text-text-primary transition-colors"
+                    title="Configure motor ID"
+                  >
+                    Configure Motor ID
+                  </Link>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="pointer-events-auto">
-              <MotorDataTable
-                bus={bus}
-                busIndex={busIndex}
-                isWebControlled={isWebControlled}
-              />
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="pointer-events-auto">
+                <MotorDataTable
+                  bus={bus}
+                  busIndex={busIndex}
+                  isWebControlled={isWebControlled}
+                />
+              </div>
             </div>
-          </div>
-          {selectedVideoSource && (
-            <div className="absolute top-4 lg:top-auto lg:bottom-4 right-4 w-2/5 h-[200px] pointer-events-auto">
-              <CameraViewer inferenceState={selectedVideoSource} />
-            </div>
-          )}
-        </div>
-      )}
+            {primaryVideoSource && (
+              <div className="absolute top-4 right-4 h-[200px] w-2/5 max-w-[520px] overflow-hidden rounded-lg border border-border-default bg-black shadow-lg pointer-events-auto">
+                <CameraViewer inferenceState={primaryVideoSource} className="h-full w-full" />
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 };
