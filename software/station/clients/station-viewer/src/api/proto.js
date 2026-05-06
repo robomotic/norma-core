@@ -38,7 +38,7 @@ export const commands = $root.commands = (() => {
         function DriverCommand(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -123,9 +123,13 @@ export const commands = $root.commands = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        DriverCommand.decode = function decode(reader, length, error) {
+        DriverCommand.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.commands.DriverCommand();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -145,7 +149,7 @@ export const commands = $root.commands = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -176,9 +180,13 @@ export const commands = $root.commands = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        DriverCommand.verify = function verify(message) {
+        DriverCommand.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.commandId != null && message.hasOwnProperty("commandId"))
                 if (!(message.commandId && typeof message.commandId.length === "number" || $util.isString(message.commandId)))
                     return "commandId: buffer expected";
@@ -205,9 +213,13 @@ export const commands = $root.commands = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {commands.DriverCommand} DriverCommand
          */
-        DriverCommand.fromObject = function fromObject(object) {
+        DriverCommand.fromObject = function fromObject(object, long) {
             if (object instanceof $root.commands.DriverCommand)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.commands.DriverCommand();
             if (object.commandId != null)
                 if (typeof object.commandId === "string")
@@ -335,7 +347,7 @@ export const commands = $root.commands = (() => {
             this.tags = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -432,9 +444,13 @@ export const commands = $root.commands = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        StationCommandsPack.decode = function decode(reader, length, error) {
+        StationCommandsPack.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.commands.StationCommandsPack();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -452,7 +468,7 @@ export const commands = $root.commands = (() => {
                 case 10: {
                         if (!(message.commands && message.commands.length))
                             message.commands = [];
-                        message.commands.push($root.commands.DriverCommand.decode(reader, reader.uint32()));
+                        message.commands.push($root.commands.DriverCommand.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 case 20: {
@@ -462,7 +478,7 @@ export const commands = $root.commands = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -493,9 +509,13 @@ export const commands = $root.commands = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        StationCommandsPack.verify = function verify(message) {
+        StationCommandsPack.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.inferenceStateId != null && message.hasOwnProperty("inferenceStateId"))
                 if (!(message.inferenceStateId && typeof message.inferenceStateId.length === "number" || $util.isString(message.inferenceStateId)))
                     return "inferenceStateId: buffer expected";
@@ -506,7 +526,7 @@ export const commands = $root.commands = (() => {
                 if (!Array.isArray(message.commands))
                     return "commands: array expected";
                 for (let i = 0; i < message.commands.length; ++i) {
-                    let error = $root.commands.DriverCommand.verify(message.commands[i]);
+                    let error = $root.commands.DriverCommand.verify(message.commands[i], long + 1);
                     if (error)
                         return "commands." + error;
                 }
@@ -529,9 +549,13 @@ export const commands = $root.commands = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {commands.StationCommandsPack} StationCommandsPack
          */
-        StationCommandsPack.fromObject = function fromObject(object) {
+        StationCommandsPack.fromObject = function fromObject(object, long) {
             if (object instanceof $root.commands.StationCommandsPack)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.commands.StationCommandsPack();
             if (object.inferenceStateId != null)
                 if (typeof object.inferenceStateId === "string")
@@ -550,7 +574,7 @@ export const commands = $root.commands = (() => {
                 for (let i = 0; i < object.commands.length; ++i) {
                     if (typeof object.commands[i] !== "object")
                         throw TypeError(".commands.StationCommandsPack.commands: object expected");
-                    message.commands[i] = $root.commands.DriverCommand.fromObject(object.commands[i]);
+                    message.commands[i] = $root.commands.DriverCommand.fromObject(object.commands[i], long + 1);
                 }
             }
             if (object.tags) {
@@ -742,7 +766,7 @@ export const inference = $root.inference = (() => {
             this.entries = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -838,9 +862,13 @@ export const inference = $root.inference = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        InferenceRx.decode = function decode(reader, length, error) {
+        InferenceRx.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.inference.InferenceRx();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -862,11 +890,11 @@ export const inference = $root.inference = (() => {
                 case 10: {
                         if (!(message.entries && message.entries.length))
                             message.entries = [];
-                        message.entries.push($root.inference.InferenceRx.Entry.decode(reader, reader.uint32()));
+                        message.entries.push($root.inference.InferenceRx.Entry.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -897,9 +925,13 @@ export const inference = $root.inference = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        InferenceRx.verify = function verify(message) {
+        InferenceRx.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
                 if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
                     return "localStampNs: integer|Long expected";
@@ -913,7 +945,7 @@ export const inference = $root.inference = (() => {
                 if (!Array.isArray(message.entries))
                     return "entries: array expected";
                 for (let i = 0; i < message.entries.length; ++i) {
-                    let error = $root.inference.InferenceRx.Entry.verify(message.entries[i]);
+                    let error = $root.inference.InferenceRx.Entry.verify(message.entries[i], long + 1);
                     if (error)
                         return "entries." + error;
                 }
@@ -929,9 +961,13 @@ export const inference = $root.inference = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {inference.InferenceRx} InferenceRx
          */
-        InferenceRx.fromObject = function fromObject(object) {
+        InferenceRx.fromObject = function fromObject(object, long) {
             if (object instanceof $root.inference.InferenceRx)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.inference.InferenceRx();
             if (object.localStampNs != null)
                 if ($util.Long)
@@ -967,7 +1003,7 @@ export const inference = $root.inference = (() => {
                 for (let i = 0; i < object.entries.length; ++i) {
                     if (typeof object.entries[i] !== "object")
                         throw TypeError(".inference.InferenceRx.entries: object expected");
-                    message.entries[i] = $root.inference.InferenceRx.Entry.fromObject(object.entries[i]);
+                    message.entries[i] = $root.inference.InferenceRx.Entry.fromObject(object.entries[i], long + 1);
                 }
             }
             return message;
@@ -1076,7 +1112,7 @@ export const inference = $root.inference = (() => {
             function Entry(properties) {
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
+                        if (properties[keys[i]] != null && keys[i] !== "__proto__")
                             this[keys[i]] = properties[keys[i]];
             }
 
@@ -1161,9 +1197,13 @@ export const inference = $root.inference = (() => {
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            Entry.decode = function decode(reader, length, error) {
+            Entry.decode = function decode(reader, length, error, long) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
+                if (long === undefined)
+                    long = 0;
+                if (long > $Reader.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let end = length === undefined ? reader.len : reader.pos + length, message = new $root.inference.InferenceRx.Entry();
                 while (reader.pos < end) {
                     let tag = reader.uint32();
@@ -1183,7 +1223,7 @@ export const inference = $root.inference = (() => {
                             break;
                         }
                     default:
-                        reader.skipType(tag & 7);
+                        reader.skipType(tag & 7, long);
                         break;
                     }
                 }
@@ -1214,9 +1254,13 @@ export const inference = $root.inference = (() => {
              * @param {Object.<string,*>} message Plain object to verify
              * @returns {string|null} `null` if valid, otherwise the reason why it is not
              */
-            Entry.verify = function verify(message) {
+            Entry.verify = function verify(message, long) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    return "maximum nesting depth exceeded";
                 if (message.queue != null && message.hasOwnProperty("queue"))
                     if (!$util.isString(message.queue))
                         return "queue: string expected";
@@ -1253,9 +1297,13 @@ export const inference = $root.inference = (() => {
              * @param {Object.<string,*>} object Plain object
              * @returns {inference.InferenceRx.Entry} Entry
              */
-            Entry.fromObject = function fromObject(object) {
+            Entry.fromObject = function fromObject(object, long) {
                 if (object instanceof $root.inference.InferenceRx.Entry)
                     return object;
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let message = new $root.inference.InferenceRx.Entry();
                 if (object.queue != null)
                     message.queue = String(object.queue);
@@ -1430,7 +1478,7 @@ export const startups = $root.startups = (() => {
         function StationStartup(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -1555,9 +1603,13 @@ export const startups = $root.startups = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        StationStartup.decode = function decode(reader, length, error) {
+        StationStartup.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.startups.StationStartup();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -1593,7 +1645,7 @@ export const startups = $root.startups = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -1624,9 +1676,13 @@ export const startups = $root.startups = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        StationStartup.verify = function verify(message) {
+        StationStartup.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
                 if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
                     return "monotonicStampNs: integer|Long expected";
@@ -1659,9 +1715,13 @@ export const startups = $root.startups = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {startups.StationStartup} StationStartup
          */
-        StationStartup.fromObject = function fromObject(object) {
+        StationStartup.fromObject = function fromObject(object, long) {
             if (object instanceof $root.startups.StationStartup)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.startups.StationStartup();
             if (object.monotonicStampNs != null)
                 if ($util.Long)
@@ -1859,7 +1919,7 @@ export const inference_tags = $root.inference_tags = (() => {
         function RxEnvelope(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -1974,9 +2034,13 @@ export const inference_tags = $root.inference_tags = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        RxEnvelope.decode = function decode(reader, length, error) {
+        RxEnvelope.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.inference_tags.RxEnvelope();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -2008,7 +2072,7 @@ export const inference_tags = $root.inference_tags = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -2039,9 +2103,13 @@ export const inference_tags = $root.inference_tags = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        RxEnvelope.verify = function verify(message) {
+        RxEnvelope.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
                 if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
                     return "monotonicStampNs: integer|Long expected";
@@ -2076,9 +2144,13 @@ export const inference_tags = $root.inference_tags = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {inference_tags.RxEnvelope} RxEnvelope
          */
-        RxEnvelope.fromObject = function fromObject(object) {
+        RxEnvelope.fromObject = function fromObject(object, long) {
             if (object instanceof $root.inference_tags.RxEnvelope)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.inference_tags.RxEnvelope();
             if (object.monotonicStampNs != null)
                 if ($util.Long)
@@ -2247,7 +2319,7 @@ export const inference_tags = $root.inference_tags = (() => {
         function Command(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -2332,9 +2404,13 @@ export const inference_tags = $root.inference_tags = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        Command.decode = function decode(reader, length, error) {
+        Command.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.inference_tags.Command();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -2354,7 +2430,7 @@ export const inference_tags = $root.inference_tags = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -2385,9 +2461,13 @@ export const inference_tags = $root.inference_tags = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        Command.verify = function verify(message) {
+        Command.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.type != null && message.hasOwnProperty("type"))
                 switch (message.type) {
                 default:
@@ -2413,9 +2493,13 @@ export const inference_tags = $root.inference_tags = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {inference_tags.Command} Command
          */
-        Command.fromObject = function fromObject(object) {
+        Command.fromObject = function fromObject(object, long) {
             if (object instanceof $root.inference_tags.Command)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.inference_tags.Command();
             switch (object.type) {
             default:
@@ -2577,7 +2661,7 @@ export const st3215 = $root.st3215 = (() => {
         function RxEnvelope(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -2722,9 +2806,13 @@ export const st3215 = $root.st3215 = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        RxEnvelope.decode = function decode(reader, length, error) {
+        RxEnvelope.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.st3215.RxEnvelope();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -2748,7 +2836,7 @@ export const st3215 = $root.st3215 = (() => {
                         break;
                     }
                 case 11: {
-                        message.bus = $root.st3215.ST3215Bus.decode(reader, reader.uint32());
+                        message.bus = $root.st3215.ST3215Bus.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 12: {
@@ -2760,15 +2848,15 @@ export const st3215 = $root.st3215 = (() => {
                         break;
                     }
                 case 30: {
-                        message.command = $root.st3215.TxEnvelope.decode(reader, reader.uint32());
+                        message.command = $root.st3215.TxEnvelope.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 50: {
-                        message.error = $root.st3215.ST3215Error.decode(reader, reader.uint32());
+                        message.error = $root.st3215.ST3215Error.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -2799,9 +2887,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        RxEnvelope.verify = function verify(message) {
+        RxEnvelope.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
                 if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
                     return "monotonicStampNs: integer|Long expected";
@@ -2829,7 +2921,7 @@ export const st3215 = $root.st3215 = (() => {
                     break;
                 }
             if (message.bus != null && message.hasOwnProperty("bus")) {
-                let error = $root.st3215.ST3215Bus.verify(message.bus);
+                let error = $root.st3215.ST3215Bus.verify(message.bus, long + 1);
                 if (error)
                     return "bus." + error;
             }
@@ -2840,12 +2932,12 @@ export const st3215 = $root.st3215 = (() => {
                 if (!(message.data && typeof message.data.length === "number" || $util.isString(message.data)))
                     return "data: buffer expected";
             if (message.command != null && message.hasOwnProperty("command")) {
-                let error = $root.st3215.TxEnvelope.verify(message.command);
+                let error = $root.st3215.TxEnvelope.verify(message.command, long + 1);
                 if (error)
                     return "command." + error;
             }
             if (message.error != null && message.hasOwnProperty("error")) {
-                let error = $root.st3215.ST3215Error.verify(message.error);
+                let error = $root.st3215.ST3215Error.verify(message.error, long + 1);
                 if (error)
                     return "error." + error;
             }
@@ -2860,9 +2952,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {st3215.RxEnvelope} RxEnvelope
          */
-        RxEnvelope.fromObject = function fromObject(object) {
+        RxEnvelope.fromObject = function fromObject(object, long) {
             if (object instanceof $root.st3215.RxEnvelope)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.st3215.RxEnvelope();
             if (object.monotonicStampNs != null)
                 if ($util.Long)
@@ -2946,7 +3042,7 @@ export const st3215 = $root.st3215 = (() => {
             if (object.bus != null) {
                 if (typeof object.bus !== "object")
                     throw TypeError(".st3215.RxEnvelope.bus: object expected");
-                message.bus = $root.st3215.ST3215Bus.fromObject(object.bus);
+                message.bus = $root.st3215.ST3215Bus.fromObject(object.bus, long + 1);
             }
             if (object.motorId != null)
                 message.motorId = object.motorId >>> 0;
@@ -2958,12 +3054,12 @@ export const st3215 = $root.st3215 = (() => {
             if (object.command != null) {
                 if (typeof object.command !== "object")
                     throw TypeError(".st3215.RxEnvelope.command: object expected");
-                message.command = $root.st3215.TxEnvelope.fromObject(object.command);
+                message.command = $root.st3215.TxEnvelope.fromObject(object.command, long + 1);
             }
             if (object.error != null) {
                 if (typeof object.error !== "object")
                     throw TypeError(".st3215.RxEnvelope.error: object expected");
-                message.error = $root.st3215.ST3215Error.fromObject(object.error);
+                message.error = $root.st3215.ST3215Error.fromObject(object.error, long + 1);
             }
             return message;
         };
@@ -3102,7 +3198,7 @@ export const st3215 = $root.st3215 = (() => {
         function TxEnvelope(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -3297,9 +3393,13 @@ export const st3215 = $root.st3215 = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        TxEnvelope.decode = function decode(reader, length, error) {
+        TxEnvelope.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.st3215.TxEnvelope();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -3327,43 +3427,43 @@ export const st3215 = $root.st3215 = (() => {
                         break;
                     }
                 case 10: {
-                        message.write = $root.st3215.ST3215WriteCommand.decode(reader, reader.uint32());
+                        message.write = $root.st3215.ST3215WriteCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 11: {
-                        message.regWrite = $root.st3215.ST3215RegWriteCommand.decode(reader, reader.uint32());
+                        message.regWrite = $root.st3215.ST3215RegWriteCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 12: {
-                        message.action = $root.st3215.ST3215ActionCommand.decode(reader, reader.uint32());
+                        message.action = $root.st3215.ST3215ActionCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 13: {
-                        message.reset = $root.st3215.ST3215ResetCommand.decode(reader, reader.uint32());
+                        message.reset = $root.st3215.ST3215ResetCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 14: {
-                        message.resetCalibration = $root.st3215.ResetCalibrationCommand.decode(reader, reader.uint32());
+                        message.resetCalibration = $root.st3215.ResetCalibrationCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 15: {
-                        message.freezeCalibration = $root.st3215.FreezeCalibrationCommand.decode(reader, reader.uint32());
+                        message.freezeCalibration = $root.st3215.FreezeCalibrationCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 16: {
-                        message.syncWrite = $root.st3215.ST3215SyncWriteCommand.decode(reader, reader.uint32());
+                        message.syncWrite = $root.st3215.ST3215SyncWriteCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 17: {
-                        message.autoCalibrate = $root.st3215.AutoCalibrateCommand.decode(reader, reader.uint32());
+                        message.autoCalibrate = $root.st3215.AutoCalibrateCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 18: {
-                        message.stopAutoCalibrate = $root.st3215.StopAutoCalibrateCommand.decode(reader, reader.uint32());
+                        message.stopAutoCalibrate = $root.st3215.StopAutoCalibrateCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -3394,9 +3494,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        TxEnvelope.verify = function verify(message) {
+        TxEnvelope.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
                 if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
                     return "monotonicStampNs: integer|Long expected";
@@ -3413,47 +3517,47 @@ export const st3215 = $root.st3215 = (() => {
                 if (!(message.commandId && typeof message.commandId.length === "number" || $util.isString(message.commandId)))
                     return "commandId: buffer expected";
             if (message.write != null && message.hasOwnProperty("write")) {
-                let error = $root.st3215.ST3215WriteCommand.verify(message.write);
+                let error = $root.st3215.ST3215WriteCommand.verify(message.write, long + 1);
                 if (error)
                     return "write." + error;
             }
             if (message.regWrite != null && message.hasOwnProperty("regWrite")) {
-                let error = $root.st3215.ST3215RegWriteCommand.verify(message.regWrite);
+                let error = $root.st3215.ST3215RegWriteCommand.verify(message.regWrite, long + 1);
                 if (error)
                     return "regWrite." + error;
             }
             if (message.action != null && message.hasOwnProperty("action")) {
-                let error = $root.st3215.ST3215ActionCommand.verify(message.action);
+                let error = $root.st3215.ST3215ActionCommand.verify(message.action, long + 1);
                 if (error)
                     return "action." + error;
             }
             if (message.reset != null && message.hasOwnProperty("reset")) {
-                let error = $root.st3215.ST3215ResetCommand.verify(message.reset);
+                let error = $root.st3215.ST3215ResetCommand.verify(message.reset, long + 1);
                 if (error)
                     return "reset." + error;
             }
             if (message.resetCalibration != null && message.hasOwnProperty("resetCalibration")) {
-                let error = $root.st3215.ResetCalibrationCommand.verify(message.resetCalibration);
+                let error = $root.st3215.ResetCalibrationCommand.verify(message.resetCalibration, long + 1);
                 if (error)
                     return "resetCalibration." + error;
             }
             if (message.freezeCalibration != null && message.hasOwnProperty("freezeCalibration")) {
-                let error = $root.st3215.FreezeCalibrationCommand.verify(message.freezeCalibration);
+                let error = $root.st3215.FreezeCalibrationCommand.verify(message.freezeCalibration, long + 1);
                 if (error)
                     return "freezeCalibration." + error;
             }
             if (message.syncWrite != null && message.hasOwnProperty("syncWrite")) {
-                let error = $root.st3215.ST3215SyncWriteCommand.verify(message.syncWrite);
+                let error = $root.st3215.ST3215SyncWriteCommand.verify(message.syncWrite, long + 1);
                 if (error)
                     return "syncWrite." + error;
             }
             if (message.autoCalibrate != null && message.hasOwnProperty("autoCalibrate")) {
-                let error = $root.st3215.AutoCalibrateCommand.verify(message.autoCalibrate);
+                let error = $root.st3215.AutoCalibrateCommand.verify(message.autoCalibrate, long + 1);
                 if (error)
                     return "autoCalibrate." + error;
             }
             if (message.stopAutoCalibrate != null && message.hasOwnProperty("stopAutoCalibrate")) {
-                let error = $root.st3215.StopAutoCalibrateCommand.verify(message.stopAutoCalibrate);
+                let error = $root.st3215.StopAutoCalibrateCommand.verify(message.stopAutoCalibrate, long + 1);
                 if (error)
                     return "stopAutoCalibrate." + error;
             }
@@ -3468,9 +3572,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {st3215.TxEnvelope} TxEnvelope
          */
-        TxEnvelope.fromObject = function fromObject(object) {
+        TxEnvelope.fromObject = function fromObject(object, long) {
             if (object instanceof $root.st3215.TxEnvelope)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.st3215.TxEnvelope();
             if (object.monotonicStampNs != null)
                 if ($util.Long)
@@ -3509,47 +3617,47 @@ export const st3215 = $root.st3215 = (() => {
             if (object.write != null) {
                 if (typeof object.write !== "object")
                     throw TypeError(".st3215.TxEnvelope.write: object expected");
-                message.write = $root.st3215.ST3215WriteCommand.fromObject(object.write);
+                message.write = $root.st3215.ST3215WriteCommand.fromObject(object.write, long + 1);
             }
             if (object.regWrite != null) {
                 if (typeof object.regWrite !== "object")
                     throw TypeError(".st3215.TxEnvelope.regWrite: object expected");
-                message.regWrite = $root.st3215.ST3215RegWriteCommand.fromObject(object.regWrite);
+                message.regWrite = $root.st3215.ST3215RegWriteCommand.fromObject(object.regWrite, long + 1);
             }
             if (object.action != null) {
                 if (typeof object.action !== "object")
                     throw TypeError(".st3215.TxEnvelope.action: object expected");
-                message.action = $root.st3215.ST3215ActionCommand.fromObject(object.action);
+                message.action = $root.st3215.ST3215ActionCommand.fromObject(object.action, long + 1);
             }
             if (object.reset != null) {
                 if (typeof object.reset !== "object")
                     throw TypeError(".st3215.TxEnvelope.reset: object expected");
-                message.reset = $root.st3215.ST3215ResetCommand.fromObject(object.reset);
+                message.reset = $root.st3215.ST3215ResetCommand.fromObject(object.reset, long + 1);
             }
             if (object.resetCalibration != null) {
                 if (typeof object.resetCalibration !== "object")
                     throw TypeError(".st3215.TxEnvelope.resetCalibration: object expected");
-                message.resetCalibration = $root.st3215.ResetCalibrationCommand.fromObject(object.resetCalibration);
+                message.resetCalibration = $root.st3215.ResetCalibrationCommand.fromObject(object.resetCalibration, long + 1);
             }
             if (object.freezeCalibration != null) {
                 if (typeof object.freezeCalibration !== "object")
                     throw TypeError(".st3215.TxEnvelope.freezeCalibration: object expected");
-                message.freezeCalibration = $root.st3215.FreezeCalibrationCommand.fromObject(object.freezeCalibration);
+                message.freezeCalibration = $root.st3215.FreezeCalibrationCommand.fromObject(object.freezeCalibration, long + 1);
             }
             if (object.syncWrite != null) {
                 if (typeof object.syncWrite !== "object")
                     throw TypeError(".st3215.TxEnvelope.syncWrite: object expected");
-                message.syncWrite = $root.st3215.ST3215SyncWriteCommand.fromObject(object.syncWrite);
+                message.syncWrite = $root.st3215.ST3215SyncWriteCommand.fromObject(object.syncWrite, long + 1);
             }
             if (object.autoCalibrate != null) {
                 if (typeof object.autoCalibrate !== "object")
                     throw TypeError(".st3215.TxEnvelope.autoCalibrate: object expected");
-                message.autoCalibrate = $root.st3215.AutoCalibrateCommand.fromObject(object.autoCalibrate);
+                message.autoCalibrate = $root.st3215.AutoCalibrateCommand.fromObject(object.autoCalibrate, long + 1);
             }
             if (object.stopAutoCalibrate != null) {
                 if (typeof object.stopAutoCalibrate !== "object")
                     throw TypeError(".st3215.TxEnvelope.stopAutoCalibrate: object expected");
-                message.stopAutoCalibrate = $root.st3215.StopAutoCalibrateCommand.fromObject(object.stopAutoCalibrate);
+                message.stopAutoCalibrate = $root.st3215.StopAutoCalibrateCommand.fromObject(object.stopAutoCalibrate, long + 1);
             }
             return message;
         };
@@ -3697,7 +3805,7 @@ export const st3215 = $root.st3215 = (() => {
             this.arcs = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -3823,9 +3931,13 @@ export const st3215 = $root.st3215 = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        MetaEnvelope.decode = function decode(reader, length, error) {
+        MetaEnvelope.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.st3215.MetaEnvelope();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -3859,11 +3971,11 @@ export const st3215 = $root.st3215 = (() => {
                 case 10: {
                         if (!(message.arcs && message.arcs.length))
                             message.arcs = [];
-                        message.arcs.push($root.st3215.MotorArc.decode(reader, reader.uint32()));
+                        message.arcs.push($root.st3215.MotorArc.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -3894,9 +4006,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        MetaEnvelope.verify = function verify(message) {
+        MetaEnvelope.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
                 if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
                     return "monotonicStampNs: integer|Long expected";
@@ -3925,7 +4041,7 @@ export const st3215 = $root.st3215 = (() => {
                 if (!Array.isArray(message.arcs))
                     return "arcs: array expected";
                 for (let i = 0; i < message.arcs.length; ++i) {
-                    let error = $root.st3215.MotorArc.verify(message.arcs[i]);
+                    let error = $root.st3215.MotorArc.verify(message.arcs[i], long + 1);
                     if (error)
                         return "arcs." + error;
                 }
@@ -3941,9 +4057,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {st3215.MetaEnvelope} MetaEnvelope
          */
-        MetaEnvelope.fromObject = function fromObject(object) {
+        MetaEnvelope.fromObject = function fromObject(object, long) {
             if (object instanceof $root.st3215.MetaEnvelope)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.st3215.MetaEnvelope();
             if (object.monotonicStampNs != null)
                 if ($util.Long)
@@ -4006,7 +4126,7 @@ export const st3215 = $root.st3215 = (() => {
                 for (let i = 0; i < object.arcs.length; ++i) {
                     if (typeof object.arcs[i] !== "object")
                         throw TypeError(".st3215.MetaEnvelope.arcs: object expected");
-                    message.arcs[i] = $root.st3215.MotorArc.fromObject(object.arcs[i]);
+                    message.arcs[i] = $root.st3215.MotorArc.fromObject(object.arcs[i], long + 1);
                 }
             }
             return message;
@@ -4150,7 +4270,7 @@ export const st3215 = $root.st3215 = (() => {
         function InferenceCommandState(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -4225,9 +4345,13 @@ export const st3215 = $root.st3215 = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        InferenceCommandState.decode = function decode(reader, length, error) {
+        InferenceCommandState.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.st3215.InferenceCommandState();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -4235,7 +4359,7 @@ export const st3215 = $root.st3215 = (() => {
                     break;
                 switch (tag >>> 3) {
                 case 1: {
-                        message.command = $root.st3215.TxEnvelope.decode(reader, reader.uint32());
+                        message.command = $root.st3215.TxEnvelope.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 2: {
@@ -4243,7 +4367,7 @@ export const st3215 = $root.st3215 = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -4274,11 +4398,15 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        InferenceCommandState.verify = function verify(message) {
+        InferenceCommandState.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.command != null && message.hasOwnProperty("command")) {
-                let error = $root.st3215.TxEnvelope.verify(message.command);
+                let error = $root.st3215.TxEnvelope.verify(message.command, long + 1);
                 if (error)
                     return "command." + error;
             }
@@ -4303,14 +4431,18 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {st3215.InferenceCommandState} InferenceCommandState
          */
-        InferenceCommandState.fromObject = function fromObject(object) {
+        InferenceCommandState.fromObject = function fromObject(object, long) {
             if (object instanceof $root.st3215.InferenceCommandState)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.st3215.InferenceCommandState();
             if (object.command != null) {
                 if (typeof object.command !== "object")
                     throw TypeError(".st3215.InferenceCommandState.command: object expected");
-                message.command = $root.st3215.TxEnvelope.fromObject(object.command);
+                message.command = $root.st3215.TxEnvelope.fromObject(object.command, long + 1);
             }
             switch (object.result) {
             default:
@@ -4416,7 +4548,7 @@ export const st3215 = $root.st3215 = (() => {
         function AutoCalibrationState(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -4521,9 +4653,13 @@ export const st3215 = $root.st3215 = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        AutoCalibrationState.decode = function decode(reader, length, error) {
+        AutoCalibrationState.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.st3215.AutoCalibrationState();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -4551,7 +4687,7 @@ export const st3215 = $root.st3215 = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -4582,9 +4718,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        AutoCalibrationState.verify = function verify(message) {
+        AutoCalibrationState.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.status != null && message.hasOwnProperty("status"))
                 switch (message.status) {
                 default:
@@ -4619,9 +4759,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {st3215.AutoCalibrationState} AutoCalibrationState
          */
-        AutoCalibrationState.fromObject = function fromObject(object) {
+        AutoCalibrationState.fromObject = function fromObject(object, long) {
             if (object instanceof $root.st3215.AutoCalibrationState)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.st3215.AutoCalibrationState();
             switch (object.status) {
             default:
@@ -4766,7 +4910,7 @@ export const st3215 = $root.st3215 = (() => {
             this.buses = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -4842,9 +4986,13 @@ export const st3215 = $root.st3215 = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        InferenceState.decode = function decode(reader, length, error) {
+        InferenceState.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.st3215.InferenceState();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -4858,11 +5006,11 @@ export const st3215 = $root.st3215 = (() => {
                 case 10: {
                         if (!(message.buses && message.buses.length))
                             message.buses = [];
-                        message.buses.push($root.st3215.InferenceState.BusState.decode(reader, reader.uint32()));
+                        message.buses.push($root.st3215.InferenceState.BusState.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -4893,9 +5041,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        InferenceState.verify = function verify(message) {
+        InferenceState.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.lastInferenceQueuePtr != null && message.hasOwnProperty("lastInferenceQueuePtr"))
                 if (!(message.lastInferenceQueuePtr && typeof message.lastInferenceQueuePtr.length === "number" || $util.isString(message.lastInferenceQueuePtr)))
                     return "lastInferenceQueuePtr: buffer expected";
@@ -4903,7 +5055,7 @@ export const st3215 = $root.st3215 = (() => {
                 if (!Array.isArray(message.buses))
                     return "buses: array expected";
                 for (let i = 0; i < message.buses.length; ++i) {
-                    let error = $root.st3215.InferenceState.BusState.verify(message.buses[i]);
+                    let error = $root.st3215.InferenceState.BusState.verify(message.buses[i], long + 1);
                     if (error)
                         return "buses." + error;
                 }
@@ -4919,9 +5071,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {st3215.InferenceState} InferenceState
          */
-        InferenceState.fromObject = function fromObject(object) {
+        InferenceState.fromObject = function fromObject(object, long) {
             if (object instanceof $root.st3215.InferenceState)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.st3215.InferenceState();
             if (object.lastInferenceQueuePtr != null)
                 if (typeof object.lastInferenceQueuePtr === "string")
@@ -4935,7 +5091,7 @@ export const st3215 = $root.st3215 = (() => {
                 for (let i = 0; i < object.buses.length; ++i) {
                     if (typeof object.buses[i] !== "object")
                         throw TypeError(".st3215.InferenceState.buses: object expected");
-                    message.buses[i] = $root.st3215.InferenceState.BusState.fromObject(object.buses[i]);
+                    message.buses[i] = $root.st3215.InferenceState.BusState.fromObject(object.buses[i], long + 1);
                 }
             }
             return message;
@@ -5030,7 +5186,7 @@ export const st3215 = $root.st3215 = (() => {
             function MotorState(properties) {
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
+                        if (properties[keys[i]] != null && keys[i] !== "__proto__")
                             this[keys[i]] = properties[keys[i]];
             }
 
@@ -5195,9 +5351,13 @@ export const st3215 = $root.st3215 = (() => {
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            MotorState.decode = function decode(reader, length, error) {
+            MotorState.decode = function decode(reader, length, error, long) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
+                if (long === undefined)
+                    long = 0;
+                if (long > $Reader.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let end = length === undefined ? reader.len : reader.pos + length, message = new $root.st3215.InferenceState.MotorState();
                 while (reader.pos < end) {
                     let tag = reader.uint32();
@@ -5229,7 +5389,7 @@ export const st3215 = $root.st3215 = (() => {
                             break;
                         }
                     case 6: {
-                            message.error = $root.st3215.ST3215Error.decode(reader, reader.uint32());
+                            message.error = $root.st3215.ST3215Error.decode(reader, reader.uint32(), undefined, long + 1);
                             break;
                         }
                     case 10: {
@@ -5245,11 +5405,11 @@ export const st3215 = $root.st3215 = (() => {
                             break;
                         }
                     case 12: {
-                            message.lastCommand = $root.st3215.InferenceCommandState.decode(reader, reader.uint32());
+                            message.lastCommand = $root.st3215.InferenceCommandState.decode(reader, reader.uint32(), undefined, long + 1);
                             break;
                         }
                     default:
-                        reader.skipType(tag & 7);
+                        reader.skipType(tag & 7, long);
                         break;
                     }
                 }
@@ -5280,9 +5440,13 @@ export const st3215 = $root.st3215 = (() => {
              * @param {Object.<string,*>} message Plain object to verify
              * @returns {string|null} `null` if valid, otherwise the reason why it is not
              */
-            MotorState.verify = function verify(message) {
+            MotorState.verify = function verify(message, long) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    return "maximum nesting depth exceeded";
                 if (message.id != null && message.hasOwnProperty("id"))
                     if (!$util.isInteger(message.id))
                         return "id: integer expected";
@@ -5302,7 +5466,7 @@ export const st3215 = $root.st3215 = (() => {
                     if (!(message.state && typeof message.state.length === "number" || $util.isString(message.state)))
                         return "state: buffer expected";
                 if (message.error != null && message.hasOwnProperty("error")) {
-                    let error = $root.st3215.ST3215Error.verify(message.error);
+                    let error = $root.st3215.ST3215Error.verify(message.error, long + 1);
                     if (error)
                         return "error." + error;
                 }
@@ -5316,7 +5480,7 @@ export const st3215 = $root.st3215 = (() => {
                     if (typeof message.rangeFreezed !== "boolean")
                         return "rangeFreezed: boolean expected";
                 if (message.lastCommand != null && message.hasOwnProperty("lastCommand")) {
-                    let error = $root.st3215.InferenceCommandState.verify(message.lastCommand);
+                    let error = $root.st3215.InferenceCommandState.verify(message.lastCommand, long + 1);
                     if (error)
                         return "lastCommand." + error;
                 }
@@ -5331,9 +5495,13 @@ export const st3215 = $root.st3215 = (() => {
              * @param {Object.<string,*>} object Plain object
              * @returns {st3215.InferenceState.MotorState} MotorState
              */
-            MotorState.fromObject = function fromObject(object) {
+            MotorState.fromObject = function fromObject(object, long) {
                 if (object instanceof $root.st3215.InferenceState.MotorState)
                     return object;
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let message = new $root.st3215.InferenceState.MotorState();
                 if (object.id != null)
                     message.id = object.id >>> 0;
@@ -5377,7 +5545,7 @@ export const st3215 = $root.st3215 = (() => {
                 if (object.error != null) {
                     if (typeof object.error !== "object")
                         throw TypeError(".st3215.InferenceState.MotorState.error: object expected");
-                    message.error = $root.st3215.ST3215Error.fromObject(object.error);
+                    message.error = $root.st3215.ST3215Error.fromObject(object.error, long + 1);
                 }
                 if (object.rangeMin != null)
                     message.rangeMin = object.rangeMin >>> 0;
@@ -5388,7 +5556,7 @@ export const st3215 = $root.st3215 = (() => {
                 if (object.lastCommand != null) {
                     if (typeof object.lastCommand !== "object")
                         throw TypeError(".st3215.InferenceState.MotorState.lastCommand: object expected");
-                    message.lastCommand = $root.st3215.InferenceCommandState.fromObject(object.lastCommand);
+                    message.lastCommand = $root.st3215.InferenceCommandState.fromObject(object.lastCommand, long + 1);
                 }
                 return message;
             };
@@ -5532,7 +5700,7 @@ export const st3215 = $root.st3215 = (() => {
                 this.motors = [];
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
+                        if (properties[keys[i]] != null && keys[i] !== "__proto__")
                             this[keys[i]] = properties[keys[i]];
             }
 
@@ -5648,9 +5816,13 @@ export const st3215 = $root.st3215 = (() => {
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            BusState.decode = function decode(reader, length, error) {
+            BusState.decode = function decode(reader, length, error, long) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
+                if (long === undefined)
+                    long = 0;
+                if (long > $Reader.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let end = length === undefined ? reader.len : reader.pos + length, message = new $root.st3215.InferenceState.BusState();
                 while (reader.pos < end) {
                     let tag = reader.uint32();
@@ -5658,7 +5830,7 @@ export const st3215 = $root.st3215 = (() => {
                         break;
                     switch (tag >>> 3) {
                     case 1: {
-                            message.bus = $root.st3215.ST3215Bus.decode(reader, reader.uint32());
+                            message.bus = $root.st3215.ST3215Bus.decode(reader, reader.uint32(), undefined, long + 1);
                             break;
                         }
                     case 2: {
@@ -5676,15 +5848,15 @@ export const st3215 = $root.st3215 = (() => {
                     case 10: {
                             if (!(message.motors && message.motors.length))
                                 message.motors = [];
-                            message.motors.push($root.st3215.InferenceState.MotorState.decode(reader, reader.uint32()));
+                            message.motors.push($root.st3215.InferenceState.MotorState.decode(reader, reader.uint32(), undefined, long + 1));
                             break;
                         }
                     case 20: {
-                            message.autoCalibration = $root.st3215.AutoCalibrationState.decode(reader, reader.uint32());
+                            message.autoCalibration = $root.st3215.AutoCalibrationState.decode(reader, reader.uint32(), undefined, long + 1);
                             break;
                         }
                     default:
-                        reader.skipType(tag & 7);
+                        reader.skipType(tag & 7, long);
                         break;
                     }
                 }
@@ -5715,11 +5887,15 @@ export const st3215 = $root.st3215 = (() => {
              * @param {Object.<string,*>} message Plain object to verify
              * @returns {string|null} `null` if valid, otherwise the reason why it is not
              */
-            BusState.verify = function verify(message) {
+            BusState.verify = function verify(message, long) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    return "maximum nesting depth exceeded";
                 if (message.bus != null && message.hasOwnProperty("bus")) {
-                    let error = $root.st3215.ST3215Bus.verify(message.bus);
+                    let error = $root.st3215.ST3215Bus.verify(message.bus, long + 1);
                     if (error)
                         return "bus." + error;
                 }
@@ -5736,13 +5912,13 @@ export const st3215 = $root.st3215 = (() => {
                     if (!Array.isArray(message.motors))
                         return "motors: array expected";
                     for (let i = 0; i < message.motors.length; ++i) {
-                        let error = $root.st3215.InferenceState.MotorState.verify(message.motors[i]);
+                        let error = $root.st3215.InferenceState.MotorState.verify(message.motors[i], long + 1);
                         if (error)
                             return "motors." + error;
                     }
                 }
                 if (message.autoCalibration != null && message.hasOwnProperty("autoCalibration")) {
-                    let error = $root.st3215.AutoCalibrationState.verify(message.autoCalibration);
+                    let error = $root.st3215.AutoCalibrationState.verify(message.autoCalibration, long + 1);
                     if (error)
                         return "autoCalibration." + error;
                 }
@@ -5757,14 +5933,18 @@ export const st3215 = $root.st3215 = (() => {
              * @param {Object.<string,*>} object Plain object
              * @returns {st3215.InferenceState.BusState} BusState
              */
-            BusState.fromObject = function fromObject(object) {
+            BusState.fromObject = function fromObject(object, long) {
                 if (object instanceof $root.st3215.InferenceState.BusState)
                     return object;
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let message = new $root.st3215.InferenceState.BusState();
                 if (object.bus != null) {
                     if (typeof object.bus !== "object")
                         throw TypeError(".st3215.InferenceState.BusState.bus: object expected");
-                    message.bus = $root.st3215.ST3215Bus.fromObject(object.bus);
+                    message.bus = $root.st3215.ST3215Bus.fromObject(object.bus, long + 1);
                 }
                 if (object.monotonicStampNs != null)
                     if ($util.Long)
@@ -5800,13 +5980,13 @@ export const st3215 = $root.st3215 = (() => {
                     for (let i = 0; i < object.motors.length; ++i) {
                         if (typeof object.motors[i] !== "object")
                             throw TypeError(".st3215.InferenceState.BusState.motors: object expected");
-                        message.motors[i] = $root.st3215.InferenceState.MotorState.fromObject(object.motors[i]);
+                        message.motors[i] = $root.st3215.InferenceState.MotorState.fromObject(object.motors[i], long + 1);
                     }
                 }
                 if (object.autoCalibration != null) {
                     if (typeof object.autoCalibration !== "object")
                         throw TypeError(".st3215.InferenceState.BusState.autoCalibration: object expected");
-                    message.autoCalibration = $root.st3215.AutoCalibrationState.fromObject(object.autoCalibration);
+                    message.autoCalibration = $root.st3215.AutoCalibrationState.fromObject(object.autoCalibration, long + 1);
                 }
                 return message;
             };
@@ -5933,7 +6113,7 @@ export const st3215 = $root.st3215 = (() => {
         function Command(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -6088,9 +6268,13 @@ export const st3215 = $root.st3215 = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        Command.decode = function decode(reader, length, error) {
+        Command.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.st3215.Command();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -6102,43 +6286,43 @@ export const st3215 = $root.st3215 = (() => {
                         break;
                     }
                 case 10: {
-                        message.write = $root.st3215.ST3215WriteCommand.decode(reader, reader.uint32());
+                        message.write = $root.st3215.ST3215WriteCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 11: {
-                        message.regWrite = $root.st3215.ST3215RegWriteCommand.decode(reader, reader.uint32());
+                        message.regWrite = $root.st3215.ST3215RegWriteCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 12: {
-                        message.action = $root.st3215.ST3215ActionCommand.decode(reader, reader.uint32());
+                        message.action = $root.st3215.ST3215ActionCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 13: {
-                        message.reset = $root.st3215.ST3215ResetCommand.decode(reader, reader.uint32());
+                        message.reset = $root.st3215.ST3215ResetCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 14: {
-                        message.resetCalibration = $root.st3215.ResetCalibrationCommand.decode(reader, reader.uint32());
+                        message.resetCalibration = $root.st3215.ResetCalibrationCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 15: {
-                        message.freezeCalibration = $root.st3215.FreezeCalibrationCommand.decode(reader, reader.uint32());
+                        message.freezeCalibration = $root.st3215.FreezeCalibrationCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 16: {
-                        message.syncWrite = $root.st3215.ST3215SyncWriteCommand.decode(reader, reader.uint32());
+                        message.syncWrite = $root.st3215.ST3215SyncWriteCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 17: {
-                        message.autoCalibrate = $root.st3215.AutoCalibrateCommand.decode(reader, reader.uint32());
+                        message.autoCalibrate = $root.st3215.AutoCalibrateCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 18: {
-                        message.stopAutoCalibrate = $root.st3215.StopAutoCalibrateCommand.decode(reader, reader.uint32());
+                        message.stopAutoCalibrate = $root.st3215.StopAutoCalibrateCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -6169,54 +6353,58 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        Command.verify = function verify(message) {
+        Command.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.targetBusSerial != null && message.hasOwnProperty("targetBusSerial"))
                 if (!$util.isString(message.targetBusSerial))
                     return "targetBusSerial: string expected";
             if (message.write != null && message.hasOwnProperty("write")) {
-                let error = $root.st3215.ST3215WriteCommand.verify(message.write);
+                let error = $root.st3215.ST3215WriteCommand.verify(message.write, long + 1);
                 if (error)
                     return "write." + error;
             }
             if (message.regWrite != null && message.hasOwnProperty("regWrite")) {
-                let error = $root.st3215.ST3215RegWriteCommand.verify(message.regWrite);
+                let error = $root.st3215.ST3215RegWriteCommand.verify(message.regWrite, long + 1);
                 if (error)
                     return "regWrite." + error;
             }
             if (message.action != null && message.hasOwnProperty("action")) {
-                let error = $root.st3215.ST3215ActionCommand.verify(message.action);
+                let error = $root.st3215.ST3215ActionCommand.verify(message.action, long + 1);
                 if (error)
                     return "action." + error;
             }
             if (message.reset != null && message.hasOwnProperty("reset")) {
-                let error = $root.st3215.ST3215ResetCommand.verify(message.reset);
+                let error = $root.st3215.ST3215ResetCommand.verify(message.reset, long + 1);
                 if (error)
                     return "reset." + error;
             }
             if (message.resetCalibration != null && message.hasOwnProperty("resetCalibration")) {
-                let error = $root.st3215.ResetCalibrationCommand.verify(message.resetCalibration);
+                let error = $root.st3215.ResetCalibrationCommand.verify(message.resetCalibration, long + 1);
                 if (error)
                     return "resetCalibration." + error;
             }
             if (message.freezeCalibration != null && message.hasOwnProperty("freezeCalibration")) {
-                let error = $root.st3215.FreezeCalibrationCommand.verify(message.freezeCalibration);
+                let error = $root.st3215.FreezeCalibrationCommand.verify(message.freezeCalibration, long + 1);
                 if (error)
                     return "freezeCalibration." + error;
             }
             if (message.syncWrite != null && message.hasOwnProperty("syncWrite")) {
-                let error = $root.st3215.ST3215SyncWriteCommand.verify(message.syncWrite);
+                let error = $root.st3215.ST3215SyncWriteCommand.verify(message.syncWrite, long + 1);
                 if (error)
                     return "syncWrite." + error;
             }
             if (message.autoCalibrate != null && message.hasOwnProperty("autoCalibrate")) {
-                let error = $root.st3215.AutoCalibrateCommand.verify(message.autoCalibrate);
+                let error = $root.st3215.AutoCalibrateCommand.verify(message.autoCalibrate, long + 1);
                 if (error)
                     return "autoCalibrate." + error;
             }
             if (message.stopAutoCalibrate != null && message.hasOwnProperty("stopAutoCalibrate")) {
-                let error = $root.st3215.StopAutoCalibrateCommand.verify(message.stopAutoCalibrate);
+                let error = $root.st3215.StopAutoCalibrateCommand.verify(message.stopAutoCalibrate, long + 1);
                 if (error)
                     return "stopAutoCalibrate." + error;
             }
@@ -6231,56 +6419,60 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {st3215.Command} Command
          */
-        Command.fromObject = function fromObject(object) {
+        Command.fromObject = function fromObject(object, long) {
             if (object instanceof $root.st3215.Command)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.st3215.Command();
             if (object.targetBusSerial != null)
                 message.targetBusSerial = String(object.targetBusSerial);
             if (object.write != null) {
                 if (typeof object.write !== "object")
                     throw TypeError(".st3215.Command.write: object expected");
-                message.write = $root.st3215.ST3215WriteCommand.fromObject(object.write);
+                message.write = $root.st3215.ST3215WriteCommand.fromObject(object.write, long + 1);
             }
             if (object.regWrite != null) {
                 if (typeof object.regWrite !== "object")
                     throw TypeError(".st3215.Command.regWrite: object expected");
-                message.regWrite = $root.st3215.ST3215RegWriteCommand.fromObject(object.regWrite);
+                message.regWrite = $root.st3215.ST3215RegWriteCommand.fromObject(object.regWrite, long + 1);
             }
             if (object.action != null) {
                 if (typeof object.action !== "object")
                     throw TypeError(".st3215.Command.action: object expected");
-                message.action = $root.st3215.ST3215ActionCommand.fromObject(object.action);
+                message.action = $root.st3215.ST3215ActionCommand.fromObject(object.action, long + 1);
             }
             if (object.reset != null) {
                 if (typeof object.reset !== "object")
                     throw TypeError(".st3215.Command.reset: object expected");
-                message.reset = $root.st3215.ST3215ResetCommand.fromObject(object.reset);
+                message.reset = $root.st3215.ST3215ResetCommand.fromObject(object.reset, long + 1);
             }
             if (object.resetCalibration != null) {
                 if (typeof object.resetCalibration !== "object")
                     throw TypeError(".st3215.Command.resetCalibration: object expected");
-                message.resetCalibration = $root.st3215.ResetCalibrationCommand.fromObject(object.resetCalibration);
+                message.resetCalibration = $root.st3215.ResetCalibrationCommand.fromObject(object.resetCalibration, long + 1);
             }
             if (object.freezeCalibration != null) {
                 if (typeof object.freezeCalibration !== "object")
                     throw TypeError(".st3215.Command.freezeCalibration: object expected");
-                message.freezeCalibration = $root.st3215.FreezeCalibrationCommand.fromObject(object.freezeCalibration);
+                message.freezeCalibration = $root.st3215.FreezeCalibrationCommand.fromObject(object.freezeCalibration, long + 1);
             }
             if (object.syncWrite != null) {
                 if (typeof object.syncWrite !== "object")
                     throw TypeError(".st3215.Command.syncWrite: object expected");
-                message.syncWrite = $root.st3215.ST3215SyncWriteCommand.fromObject(object.syncWrite);
+                message.syncWrite = $root.st3215.ST3215SyncWriteCommand.fromObject(object.syncWrite, long + 1);
             }
             if (object.autoCalibrate != null) {
                 if (typeof object.autoCalibrate !== "object")
                     throw TypeError(".st3215.Command.autoCalibrate: object expected");
-                message.autoCalibrate = $root.st3215.AutoCalibrateCommand.fromObject(object.autoCalibrate);
+                message.autoCalibrate = $root.st3215.AutoCalibrateCommand.fromObject(object.autoCalibrate, long + 1);
             }
             if (object.stopAutoCalibrate != null) {
                 if (typeof object.stopAutoCalibrate !== "object")
                     throw TypeError(".st3215.Command.stopAutoCalibrate: object expected");
-                message.stopAutoCalibrate = $root.st3215.StopAutoCalibrateCommand.fromObject(object.stopAutoCalibrate);
+                message.stopAutoCalibrate = $root.st3215.StopAutoCalibrateCommand.fromObject(object.stopAutoCalibrate, long + 1);
             }
             return message;
         };
@@ -6382,7 +6574,7 @@ export const st3215 = $root.st3215 = (() => {
         function ResetCalibrationCommand(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -6447,9 +6639,13 @@ export const st3215 = $root.st3215 = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        ResetCalibrationCommand.decode = function decode(reader, length, error) {
+        ResetCalibrationCommand.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.st3215.ResetCalibrationCommand();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -6461,7 +6657,7 @@ export const st3215 = $root.st3215 = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -6492,9 +6688,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        ResetCalibrationCommand.verify = function verify(message) {
+        ResetCalibrationCommand.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.reset != null && message.hasOwnProperty("reset"))
                 if (typeof message.reset !== "boolean")
                     return "reset: boolean expected";
@@ -6509,9 +6709,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {st3215.ResetCalibrationCommand} ResetCalibrationCommand
          */
-        ResetCalibrationCommand.fromObject = function fromObject(object) {
+        ResetCalibrationCommand.fromObject = function fromObject(object, long) {
             if (object instanceof $root.st3215.ResetCalibrationCommand)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.st3215.ResetCalibrationCommand();
             if (object.reset != null)
                 message.reset = Boolean(object.reset);
@@ -6589,7 +6793,7 @@ export const st3215 = $root.st3215 = (() => {
             this.arcs = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -6665,9 +6869,13 @@ export const st3215 = $root.st3215 = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        FreezeCalibrationCommand.decode = function decode(reader, length, error) {
+        FreezeCalibrationCommand.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.st3215.FreezeCalibrationCommand();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -6681,11 +6889,11 @@ export const st3215 = $root.st3215 = (() => {
                 case 2: {
                         if (!(message.arcs && message.arcs.length))
                             message.arcs = [];
-                        message.arcs.push($root.st3215.FreezeMotorArc.decode(reader, reader.uint32()));
+                        message.arcs.push($root.st3215.FreezeMotorArc.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -6716,9 +6924,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        FreezeCalibrationCommand.verify = function verify(message) {
+        FreezeCalibrationCommand.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.freeze != null && message.hasOwnProperty("freeze"))
                 if (typeof message.freeze !== "boolean")
                     return "freeze: boolean expected";
@@ -6726,7 +6938,7 @@ export const st3215 = $root.st3215 = (() => {
                 if (!Array.isArray(message.arcs))
                     return "arcs: array expected";
                 for (let i = 0; i < message.arcs.length; ++i) {
-                    let error = $root.st3215.FreezeMotorArc.verify(message.arcs[i]);
+                    let error = $root.st3215.FreezeMotorArc.verify(message.arcs[i], long + 1);
                     if (error)
                         return "arcs." + error;
                 }
@@ -6742,9 +6954,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {st3215.FreezeCalibrationCommand} FreezeCalibrationCommand
          */
-        FreezeCalibrationCommand.fromObject = function fromObject(object) {
+        FreezeCalibrationCommand.fromObject = function fromObject(object, long) {
             if (object instanceof $root.st3215.FreezeCalibrationCommand)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.st3215.FreezeCalibrationCommand();
             if (object.freeze != null)
                 message.freeze = Boolean(object.freeze);
@@ -6755,7 +6971,7 @@ export const st3215 = $root.st3215 = (() => {
                 for (let i = 0; i < object.arcs.length; ++i) {
                     if (typeof object.arcs[i] !== "object")
                         throw TypeError(".st3215.FreezeCalibrationCommand.arcs: object expected");
-                    message.arcs[i] = $root.st3215.FreezeMotorArc.fromObject(object.arcs[i]);
+                    message.arcs[i] = $root.st3215.FreezeMotorArc.fromObject(object.arcs[i], long + 1);
                 }
             }
             return message;
@@ -6840,7 +7056,7 @@ export const st3215 = $root.st3215 = (() => {
         function FreezeMotorArc(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -6935,9 +7151,13 @@ export const st3215 = $root.st3215 = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        FreezeMotorArc.decode = function decode(reader, length, error) {
+        FreezeMotorArc.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.st3215.FreezeMotorArc();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -6961,7 +7181,7 @@ export const st3215 = $root.st3215 = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -6992,9 +7212,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        FreezeMotorArc.verify = function verify(message) {
+        FreezeMotorArc.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.motorId != null && message.hasOwnProperty("motorId"))
                 if (!$util.isInteger(message.motorId))
                     return "motorId: integer expected";
@@ -7018,9 +7242,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {st3215.FreezeMotorArc} FreezeMotorArc
          */
-        FreezeMotorArc.fromObject = function fromObject(object) {
+        FreezeMotorArc.fromObject = function fromObject(object, long) {
             if (object instanceof $root.st3215.FreezeMotorArc)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.st3215.FreezeMotorArc();
             if (object.motorId != null)
                 message.motorId = object.motorId >>> 0;
@@ -7112,7 +7340,7 @@ export const st3215 = $root.st3215 = (() => {
         function AutoCalibrateCommand(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -7177,9 +7405,13 @@ export const st3215 = $root.st3215 = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        AutoCalibrateCommand.decode = function decode(reader, length, error) {
+        AutoCalibrateCommand.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.st3215.AutoCalibrateCommand();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -7191,7 +7423,7 @@ export const st3215 = $root.st3215 = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -7222,9 +7454,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        AutoCalibrateCommand.verify = function verify(message) {
+        AutoCalibrateCommand.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.calibrate != null && message.hasOwnProperty("calibrate"))
                 if (typeof message.calibrate !== "boolean")
                     return "calibrate: boolean expected";
@@ -7239,9 +7475,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {st3215.AutoCalibrateCommand} AutoCalibrateCommand
          */
-        AutoCalibrateCommand.fromObject = function fromObject(object) {
+        AutoCalibrateCommand.fromObject = function fromObject(object, long) {
             if (object instanceof $root.st3215.AutoCalibrateCommand)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.st3215.AutoCalibrateCommand();
             if (object.calibrate != null)
                 message.calibrate = Boolean(object.calibrate);
@@ -7317,7 +7557,7 @@ export const st3215 = $root.st3215 = (() => {
         function StopAutoCalibrateCommand(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -7382,9 +7622,13 @@ export const st3215 = $root.st3215 = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        StopAutoCalibrateCommand.decode = function decode(reader, length, error) {
+        StopAutoCalibrateCommand.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.st3215.StopAutoCalibrateCommand();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -7396,7 +7640,7 @@ export const st3215 = $root.st3215 = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -7427,9 +7671,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        StopAutoCalibrateCommand.verify = function verify(message) {
+        StopAutoCalibrateCommand.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.stop != null && message.hasOwnProperty("stop"))
                 if (typeof message.stop !== "boolean")
                     return "stop: boolean expected";
@@ -7444,9 +7692,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {st3215.StopAutoCalibrateCommand} StopAutoCalibrateCommand
          */
-        StopAutoCalibrateCommand.fromObject = function fromObject(object) {
+        StopAutoCalibrateCommand.fromObject = function fromObject(object, long) {
             if (object instanceof $root.st3215.StopAutoCalibrateCommand)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.st3215.StopAutoCalibrateCommand();
             if (object.stop != null)
                 message.stop = Boolean(object.stop);
@@ -7528,7 +7780,7 @@ export const st3215 = $root.st3215 = (() => {
         function ST3215Bus(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -7653,9 +7905,13 @@ export const st3215 = $root.st3215 = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        ST3215Bus.decode = function decode(reader, length, error) {
+        ST3215Bus.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.st3215.ST3215Bus();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -7691,7 +7947,7 @@ export const st3215 = $root.st3215 = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -7722,9 +7978,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        ST3215Bus.verify = function verify(message) {
+        ST3215Bus.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.portName != null && message.hasOwnProperty("portName"))
                 if (!$util.isString(message.portName))
                     return "portName: string expected";
@@ -7757,9 +8017,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {st3215.ST3215Bus} ST3215Bus
          */
-        ST3215Bus.fromObject = function fromObject(object) {
+        ST3215Bus.fromObject = function fromObject(object, long) {
             if (object instanceof $root.st3215.ST3215Bus)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.st3215.ST3215Bus();
             if (object.portName != null)
                 message.portName = String(object.portName);
@@ -7870,7 +8134,7 @@ export const st3215 = $root.st3215 = (() => {
         function ST3215SignalData(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -7975,9 +8239,13 @@ export const st3215 = $root.st3215 = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        ST3215SignalData.decode = function decode(reader, length, error) {
+        ST3215SignalData.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.st3215.ST3215SignalData();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -8005,7 +8273,7 @@ export const st3215 = $root.st3215 = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -8036,9 +8304,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        ST3215SignalData.verify = function verify(message) {
+        ST3215SignalData.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.portName != null && message.hasOwnProperty("portName"))
                 if (!$util.isString(message.portName))
                     return "portName: string expected";
@@ -8079,9 +8351,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {st3215.ST3215SignalData} ST3215SignalData
          */
-        ST3215SignalData.fromObject = function fromObject(object) {
+        ST3215SignalData.fromObject = function fromObject(object, long) {
             if (object instanceof $root.st3215.ST3215SignalData)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.st3215.ST3215SignalData();
             if (object.portName != null)
                 message.portName = String(object.portName);
@@ -8239,7 +8515,7 @@ export const st3215 = $root.st3215 = (() => {
         function ST3215WriteCommand(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -8324,9 +8600,13 @@ export const st3215 = $root.st3215 = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        ST3215WriteCommand.decode = function decode(reader, length, error) {
+        ST3215WriteCommand.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.st3215.ST3215WriteCommand();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -8346,7 +8626,7 @@ export const st3215 = $root.st3215 = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -8377,9 +8657,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        ST3215WriteCommand.verify = function verify(message) {
+        ST3215WriteCommand.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.motorId != null && message.hasOwnProperty("motorId"))
                 if (!$util.isInteger(message.motorId))
                     return "motorId: integer expected";
@@ -8400,9 +8684,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {st3215.ST3215WriteCommand} ST3215WriteCommand
          */
-        ST3215WriteCommand.fromObject = function fromObject(object) {
+        ST3215WriteCommand.fromObject = function fromObject(object, long) {
             if (object instanceof $root.st3215.ST3215WriteCommand)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.st3215.ST3215WriteCommand();
             if (object.motorId != null)
                 message.motorId = object.motorId >>> 0;
@@ -8500,7 +8788,7 @@ export const st3215 = $root.st3215 = (() => {
         function ST3215RegWriteCommand(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -8585,9 +8873,13 @@ export const st3215 = $root.st3215 = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        ST3215RegWriteCommand.decode = function decode(reader, length, error) {
+        ST3215RegWriteCommand.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.st3215.ST3215RegWriteCommand();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -8607,7 +8899,7 @@ export const st3215 = $root.st3215 = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -8638,9 +8930,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        ST3215RegWriteCommand.verify = function verify(message) {
+        ST3215RegWriteCommand.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.motorId != null && message.hasOwnProperty("motorId"))
                 if (!$util.isInteger(message.motorId))
                     return "motorId: integer expected";
@@ -8661,9 +8957,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {st3215.ST3215RegWriteCommand} ST3215RegWriteCommand
          */
-        ST3215RegWriteCommand.fromObject = function fromObject(object) {
+        ST3215RegWriteCommand.fromObject = function fromObject(object, long) {
             if (object instanceof $root.st3215.ST3215RegWriteCommand)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.st3215.ST3215RegWriteCommand();
             if (object.motorId != null)
                 message.motorId = object.motorId >>> 0;
@@ -8759,7 +9059,7 @@ export const st3215 = $root.st3215 = (() => {
         function ST3215ActionCommand(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -8824,9 +9124,13 @@ export const st3215 = $root.st3215 = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        ST3215ActionCommand.decode = function decode(reader, length, error) {
+        ST3215ActionCommand.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.st3215.ST3215ActionCommand();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -8838,7 +9142,7 @@ export const st3215 = $root.st3215 = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -8869,9 +9173,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        ST3215ActionCommand.verify = function verify(message) {
+        ST3215ActionCommand.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.motorId != null && message.hasOwnProperty("motorId"))
                 if (!$util.isInteger(message.motorId))
                     return "motorId: integer expected";
@@ -8886,9 +9194,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {st3215.ST3215ActionCommand} ST3215ActionCommand
          */
-        ST3215ActionCommand.fromObject = function fromObject(object) {
+        ST3215ActionCommand.fromObject = function fromObject(object, long) {
             if (object instanceof $root.st3215.ST3215ActionCommand)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.st3215.ST3215ActionCommand();
             if (object.motorId != null)
                 message.motorId = object.motorId >>> 0;
@@ -8966,7 +9278,7 @@ export const st3215 = $root.st3215 = (() => {
             this.motors = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -9042,9 +9354,13 @@ export const st3215 = $root.st3215 = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        ST3215SyncWriteCommand.decode = function decode(reader, length, error) {
+        ST3215SyncWriteCommand.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.st3215.ST3215SyncWriteCommand();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -9058,11 +9374,11 @@ export const st3215 = $root.st3215 = (() => {
                 case 2: {
                         if (!(message.motors && message.motors.length))
                             message.motors = [];
-                        message.motors.push($root.st3215.ST3215SyncWriteCommand.MotorWrite.decode(reader, reader.uint32()));
+                        message.motors.push($root.st3215.ST3215SyncWriteCommand.MotorWrite.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -9093,9 +9409,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        ST3215SyncWriteCommand.verify = function verify(message) {
+        ST3215SyncWriteCommand.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.address != null && message.hasOwnProperty("address"))
                 if (!$util.isInteger(message.address))
                     return "address: integer expected";
@@ -9103,7 +9423,7 @@ export const st3215 = $root.st3215 = (() => {
                 if (!Array.isArray(message.motors))
                     return "motors: array expected";
                 for (let i = 0; i < message.motors.length; ++i) {
-                    let error = $root.st3215.ST3215SyncWriteCommand.MotorWrite.verify(message.motors[i]);
+                    let error = $root.st3215.ST3215SyncWriteCommand.MotorWrite.verify(message.motors[i], long + 1);
                     if (error)
                         return "motors." + error;
                 }
@@ -9119,9 +9439,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {st3215.ST3215SyncWriteCommand} ST3215SyncWriteCommand
          */
-        ST3215SyncWriteCommand.fromObject = function fromObject(object) {
+        ST3215SyncWriteCommand.fromObject = function fromObject(object, long) {
             if (object instanceof $root.st3215.ST3215SyncWriteCommand)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.st3215.ST3215SyncWriteCommand();
             if (object.address != null)
                 message.address = object.address >>> 0;
@@ -9132,7 +9456,7 @@ export const st3215 = $root.st3215 = (() => {
                 for (let i = 0; i < object.motors.length; ++i) {
                     if (typeof object.motors[i] !== "object")
                         throw TypeError(".st3215.ST3215SyncWriteCommand.motors: object expected");
-                    message.motors[i] = $root.st3215.ST3215SyncWriteCommand.MotorWrite.fromObject(object.motors[i]);
+                    message.motors[i] = $root.st3215.ST3215SyncWriteCommand.MotorWrite.fromObject(object.motors[i], long + 1);
                 }
             }
             return message;
@@ -9212,7 +9536,7 @@ export const st3215 = $root.st3215 = (() => {
             function MotorWrite(properties) {
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
+                        if (properties[keys[i]] != null && keys[i] !== "__proto__")
                             this[keys[i]] = properties[keys[i]];
             }
 
@@ -9287,9 +9611,13 @@ export const st3215 = $root.st3215 = (() => {
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            MotorWrite.decode = function decode(reader, length, error) {
+            MotorWrite.decode = function decode(reader, length, error, long) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
+                if (long === undefined)
+                    long = 0;
+                if (long > $Reader.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let end = length === undefined ? reader.len : reader.pos + length, message = new $root.st3215.ST3215SyncWriteCommand.MotorWrite();
                 while (reader.pos < end) {
                     let tag = reader.uint32();
@@ -9305,7 +9633,7 @@ export const st3215 = $root.st3215 = (() => {
                             break;
                         }
                     default:
-                        reader.skipType(tag & 7);
+                        reader.skipType(tag & 7, long);
                         break;
                     }
                 }
@@ -9336,9 +9664,13 @@ export const st3215 = $root.st3215 = (() => {
              * @param {Object.<string,*>} message Plain object to verify
              * @returns {string|null} `null` if valid, otherwise the reason why it is not
              */
-            MotorWrite.verify = function verify(message) {
+            MotorWrite.verify = function verify(message, long) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    return "maximum nesting depth exceeded";
                 if (message.motorId != null && message.hasOwnProperty("motorId"))
                     if (!$util.isInteger(message.motorId))
                         return "motorId: integer expected";
@@ -9356,9 +9688,13 @@ export const st3215 = $root.st3215 = (() => {
              * @param {Object.<string,*>} object Plain object
              * @returns {st3215.ST3215SyncWriteCommand.MotorWrite} MotorWrite
              */
-            MotorWrite.fromObject = function fromObject(object) {
+            MotorWrite.fromObject = function fromObject(object, long) {
                 if (object instanceof $root.st3215.ST3215SyncWriteCommand.MotorWrite)
                     return object;
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let message = new $root.st3215.ST3215SyncWriteCommand.MotorWrite();
                 if (object.motorId != null)
                     message.motorId = object.motorId >>> 0;
@@ -9453,7 +9789,7 @@ export const st3215 = $root.st3215 = (() => {
         function ST3215ResetCommand(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -9528,9 +9864,13 @@ export const st3215 = $root.st3215 = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        ST3215ResetCommand.decode = function decode(reader, length, error) {
+        ST3215ResetCommand.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.st3215.ST3215ResetCommand();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -9546,7 +9886,7 @@ export const st3215 = $root.st3215 = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -9577,9 +9917,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        ST3215ResetCommand.verify = function verify(message) {
+        ST3215ResetCommand.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.portName != null && message.hasOwnProperty("portName"))
                 if (!$util.isString(message.portName))
                     return "portName: string expected";
@@ -9597,9 +9941,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {st3215.ST3215ResetCommand} ST3215ResetCommand
          */
-        ST3215ResetCommand.fromObject = function fromObject(object) {
+        ST3215ResetCommand.fromObject = function fromObject(object, long) {
             if (object instanceof $root.st3215.ST3215ResetCommand)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.st3215.ST3215ResetCommand();
             if (object.portName != null)
                 message.portName = String(object.portName);
@@ -9702,7 +10050,7 @@ export const st3215 = $root.st3215 = (() => {
             this.positions = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -9811,9 +10159,13 @@ export const st3215 = $root.st3215 = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        MotorArc.decode = function decode(reader, length, error) {
+        MotorArc.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.st3215.MotorArc();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -9848,7 +10200,7 @@ export const st3215 = $root.st3215 = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -9879,9 +10231,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        MotorArc.verify = function verify(message) {
+        MotorArc.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.motorId != null && message.hasOwnProperty("motorId"))
                 if (!$util.isInteger(message.motorId))
                     return "motorId: integer expected";
@@ -9912,9 +10268,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {st3215.MotorArc} MotorArc
          */
-        MotorArc.fromObject = function fromObject(object) {
+        MotorArc.fromObject = function fromObject(object, long) {
             if (object instanceof $root.st3215.MotorArc)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.st3215.MotorArc();
             if (object.motorId != null)
                 message.motorId = object.motorId >>> 0;
@@ -10025,7 +10385,7 @@ export const st3215 = $root.st3215 = (() => {
             this.servo = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -10134,9 +10494,13 @@ export const st3215 = $root.st3215 = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        ST3215Error.decode = function decode(reader, length, error) {
+        ST3215Error.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.st3215.ST3215Error();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -10171,7 +10535,7 @@ export const st3215 = $root.st3215 = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -10202,9 +10566,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        ST3215Error.verify = function verify(message) {
+        ST3215Error.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.kind != null && message.hasOwnProperty("kind"))
                 switch (message.kind) {
                 default:
@@ -10255,9 +10623,13 @@ export const st3215 = $root.st3215 = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {st3215.ST3215Error} ST3215Error
          */
-        ST3215Error.fromObject = function fromObject(object) {
+        ST3215Error.fromObject = function fromObject(object, long) {
             if (object instanceof $root.st3215.ST3215Error)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.st3215.ST3215Error();
             switch (object.kind) {
             default:
@@ -10538,7 +10910,7 @@ export const usbvideo = $root.usbvideo = (() => {
             this.formats = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -10664,9 +11036,13 @@ export const usbvideo = $root.usbvideo = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        RxEnvelope.decode = function decode(reader, length, error) {
+        RxEnvelope.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.usbvideo.RxEnvelope();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -10678,17 +11054,17 @@ export const usbvideo = $root.usbvideo = (() => {
                         break;
                     }
                 case 2: {
-                        message.stamp = $root.frame.FrameStamp.decode(reader, reader.uint32());
+                        message.stamp = $root.frame.FrameStamp.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 5: {
-                        message.camera = $root.usbvideo.Camera.decode(reader, reader.uint32());
+                        message.camera = $root.usbvideo.Camera.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 6: {
                         if (!(message.formats && message.formats.length))
                             message.formats = [];
-                        message.formats.push($root.usbvideo.CameraFormat.decode(reader, reader.uint32()));
+                        message.formats.push($root.usbvideo.CameraFormat.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 case 7: {
@@ -10700,11 +11076,11 @@ export const usbvideo = $root.usbvideo = (() => {
                         break;
                     }
                 case 10: {
-                        message.frames = $root.frame.FramesPack.decode(reader, reader.uint32());
+                        message.frames = $root.frame.FramesPack.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -10735,9 +11111,13 @@ export const usbvideo = $root.usbvideo = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        RxEnvelope.verify = function verify(message) {
+        RxEnvelope.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.type != null && message.hasOwnProperty("type"))
                 switch (message.type) {
                 default:
@@ -10751,12 +11131,12 @@ export const usbvideo = $root.usbvideo = (() => {
                     break;
                 }
             if (message.stamp != null && message.hasOwnProperty("stamp")) {
-                let error = $root.frame.FrameStamp.verify(message.stamp);
+                let error = $root.frame.FrameStamp.verify(message.stamp, long + 1);
                 if (error)
                     return "stamp." + error;
             }
             if (message.camera != null && message.hasOwnProperty("camera")) {
-                let error = $root.usbvideo.Camera.verify(message.camera);
+                let error = $root.usbvideo.Camera.verify(message.camera, long + 1);
                 if (error)
                     return "camera." + error;
             }
@@ -10764,7 +11144,7 @@ export const usbvideo = $root.usbvideo = (() => {
                 if (!Array.isArray(message.formats))
                     return "formats: array expected";
                 for (let i = 0; i < message.formats.length; ++i) {
-                    let error = $root.usbvideo.CameraFormat.verify(message.formats[i]);
+                    let error = $root.usbvideo.CameraFormat.verify(message.formats[i], long + 1);
                     if (error)
                         return "formats." + error;
                 }
@@ -10776,7 +11156,7 @@ export const usbvideo = $root.usbvideo = (() => {
                 if (!(message.lastInferenceQueuePtr && typeof message.lastInferenceQueuePtr.length === "number" || $util.isString(message.lastInferenceQueuePtr)))
                     return "lastInferenceQueuePtr: buffer expected";
             if (message.frames != null && message.hasOwnProperty("frames")) {
-                let error = $root.frame.FramesPack.verify(message.frames);
+                let error = $root.frame.FramesPack.verify(message.frames, long + 1);
                 if (error)
                     return "frames." + error;
             }
@@ -10791,9 +11171,13 @@ export const usbvideo = $root.usbvideo = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {usbvideo.RxEnvelope} RxEnvelope
          */
-        RxEnvelope.fromObject = function fromObject(object) {
+        RxEnvelope.fromObject = function fromObject(object, long) {
             if (object instanceof $root.usbvideo.RxEnvelope)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.usbvideo.RxEnvelope();
             switch (object.type) {
             default:
@@ -10830,12 +11214,12 @@ export const usbvideo = $root.usbvideo = (() => {
             if (object.stamp != null) {
                 if (typeof object.stamp !== "object")
                     throw TypeError(".usbvideo.RxEnvelope.stamp: object expected");
-                message.stamp = $root.frame.FrameStamp.fromObject(object.stamp);
+                message.stamp = $root.frame.FrameStamp.fromObject(object.stamp, long + 1);
             }
             if (object.camera != null) {
                 if (typeof object.camera !== "object")
                     throw TypeError(".usbvideo.RxEnvelope.camera: object expected");
-                message.camera = $root.usbvideo.Camera.fromObject(object.camera);
+                message.camera = $root.usbvideo.Camera.fromObject(object.camera, long + 1);
             }
             if (object.formats) {
                 if (!Array.isArray(object.formats))
@@ -10844,7 +11228,7 @@ export const usbvideo = $root.usbvideo = (() => {
                 for (let i = 0; i < object.formats.length; ++i) {
                     if (typeof object.formats[i] !== "object")
                         throw TypeError(".usbvideo.RxEnvelope.formats: object expected");
-                    message.formats[i] = $root.usbvideo.CameraFormat.fromObject(object.formats[i]);
+                    message.formats[i] = $root.usbvideo.CameraFormat.fromObject(object.formats[i], long + 1);
                 }
             }
             if (object.error != null)
@@ -10857,7 +11241,7 @@ export const usbvideo = $root.usbvideo = (() => {
             if (object.frames != null) {
                 if (typeof object.frames !== "object")
                     throw TypeError(".usbvideo.RxEnvelope.frames: object expected");
-                message.frames = $root.frame.FramesPack.fromObject(object.frames);
+                message.frames = $root.frame.FramesPack.fromObject(object.frames, long + 1);
             }
             return message;
         };
@@ -10967,7 +11351,7 @@ export const usbvideo = $root.usbvideo = (() => {
         function Camera(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -11102,9 +11486,13 @@ export const usbvideo = $root.usbvideo = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        Camera.decode = function decode(reader, length, error) {
+        Camera.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.usbvideo.Camera();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -11144,7 +11532,7 @@ export const usbvideo = $root.usbvideo = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -11175,9 +11563,13 @@ export const usbvideo = $root.usbvideo = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        Camera.verify = function verify(message) {
+        Camera.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.vendorId != null && message.hasOwnProperty("vendorId"))
                 if (!$util.isInteger(message.vendorId))
                     return "vendorId: integer expected";
@@ -11213,9 +11605,13 @@ export const usbvideo = $root.usbvideo = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {usbvideo.Camera} Camera
          */
-        Camera.fromObject = function fromObject(object) {
+        Camera.fromObject = function fromObject(object, long) {
             if (object instanceof $root.usbvideo.Camera)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.usbvideo.Camera();
             if (object.vendorId != null)
                 message.vendorId = object.vendorId >>> 0;
@@ -11333,7 +11729,7 @@ export const usbvideo = $root.usbvideo = (() => {
         function CameraFormat(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -11458,9 +11854,13 @@ export const usbvideo = $root.usbvideo = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        CameraFormat.decode = function decode(reader, length, error) {
+        CameraFormat.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.usbvideo.CameraFormat();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -11496,7 +11896,7 @@ export const usbvideo = $root.usbvideo = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -11527,9 +11927,13 @@ export const usbvideo = $root.usbvideo = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        CameraFormat.verify = function verify(message) {
+        CameraFormat.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.fourcc != null && message.hasOwnProperty("fourcc"))
                 if (!$util.isInteger(message.fourcc))
                     return "fourcc: integer expected";
@@ -11562,9 +11966,13 @@ export const usbvideo = $root.usbvideo = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {usbvideo.CameraFormat} CameraFormat
          */
-        CameraFormat.fromObject = function fromObject(object) {
+        CameraFormat.fromObject = function fromObject(object, long) {
             if (object instanceof $root.usbvideo.CameraFormat)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.usbvideo.CameraFormat();
             if (object.fourcc != null)
                 message.fourcc = object.fourcc >>> 0;
@@ -11697,7 +12105,7 @@ export const frame = $root.frame = (() => {
             this.framesData = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -11794,9 +12202,13 @@ export const frame = $root.frame = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        FramesPack.decode = function decode(reader, length, error) {
+        FramesPack.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.frame.FramesPack();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -11804,13 +12216,13 @@ export const frame = $root.frame = (() => {
                     break;
                 switch (tag >>> 3) {
                 case 1: {
-                        message.format = $root.frame.FrameFormat.decode(reader, reader.uint32());
+                        message.format = $root.frame.FrameFormat.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 10: {
                         if (!(message.stamps && message.stamps.length))
                             message.stamps = [];
-                        message.stamps.push($root.frame.FrameStamp.decode(reader, reader.uint32()));
+                        message.stamps.push($root.frame.FrameStamp.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 case 11: {
@@ -11824,7 +12236,7 @@ export const frame = $root.frame = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -11855,11 +12267,15 @@ export const frame = $root.frame = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        FramesPack.verify = function verify(message) {
+        FramesPack.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.format != null && message.hasOwnProperty("format")) {
-                let error = $root.frame.FrameFormat.verify(message.format);
+                let error = $root.frame.FrameFormat.verify(message.format, long + 1);
                 if (error)
                     return "format." + error;
             }
@@ -11867,7 +12283,7 @@ export const frame = $root.frame = (() => {
                 if (!Array.isArray(message.stamps))
                     return "stamps: array expected";
                 for (let i = 0; i < message.stamps.length; ++i) {
-                    let error = $root.frame.FrameStamp.verify(message.stamps[i]);
+                    let error = $root.frame.FrameStamp.verify(message.stamps[i], long + 1);
                     if (error)
                         return "stamps." + error;
                 }
@@ -11893,14 +12309,18 @@ export const frame = $root.frame = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {frame.FramesPack} FramesPack
          */
-        FramesPack.fromObject = function fromObject(object) {
+        FramesPack.fromObject = function fromObject(object, long) {
             if (object instanceof $root.frame.FramesPack)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.frame.FramesPack();
             if (object.format != null) {
                 if (typeof object.format !== "object")
                     throw TypeError(".frame.FramesPack.format: object expected");
-                message.format = $root.frame.FrameFormat.fromObject(object.format);
+                message.format = $root.frame.FrameFormat.fromObject(object.format, long + 1);
             }
             if (object.stamps) {
                 if (!Array.isArray(object.stamps))
@@ -11909,7 +12329,7 @@ export const frame = $root.frame = (() => {
                 for (let i = 0; i < object.stamps.length; ++i) {
                     if (typeof object.stamps[i] !== "object")
                         throw TypeError(".frame.FramesPack.stamps: object expected");
-                    message.stamps[i] = $root.frame.FrameStamp.fromObject(object.stamps[i]);
+                    message.stamps[i] = $root.frame.FrameStamp.fromObject(object.stamps[i], long + 1);
                 }
             }
             if (object.linearData != null)
@@ -12026,7 +12446,7 @@ export const frame = $root.frame = (() => {
         function FrameStamp(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -12121,9 +12541,13 @@ export const frame = $root.frame = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        FrameStamp.decode = function decode(reader, length, error) {
+        FrameStamp.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.frame.FrameStamp();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -12147,7 +12571,7 @@ export const frame = $root.frame = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -12178,9 +12602,13 @@ export const frame = $root.frame = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        FrameStamp.verify = function verify(message) {
+        FrameStamp.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
                 if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
                     return "monotonicStampNs: integer|Long expected";
@@ -12204,9 +12632,13 @@ export const frame = $root.frame = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {frame.FrameStamp} FrameStamp
          */
-        FrameStamp.fromObject = function fromObject(object) {
+        FrameStamp.fromObject = function fromObject(object, long) {
             if (object instanceof $root.frame.FrameStamp)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.frame.FrameStamp();
             if (object.monotonicStampNs != null)
                 if ($util.Long)
@@ -12370,7 +12802,7 @@ export const frame = $root.frame = (() => {
         function FrameFormat(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -12455,9 +12887,13 @@ export const frame = $root.frame = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        FrameFormat.decode = function decode(reader, length, error) {
+        FrameFormat.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.frame.FrameFormat();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -12477,7 +12913,7 @@ export const frame = $root.frame = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -12508,9 +12944,13 @@ export const frame = $root.frame = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        FrameFormat.verify = function verify(message) {
+        FrameFormat.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.width != null && message.hasOwnProperty("width"))
                 if (!$util.isInteger(message.width))
                     return "width: integer expected";
@@ -12536,9 +12976,13 @@ export const frame = $root.frame = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {frame.FrameFormat} FrameFormat
          */
-        FrameFormat.fromObject = function fromObject(object) {
+        FrameFormat.fromObject = function fromObject(object, long) {
             if (object instanceof $root.frame.FrameFormat)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.frame.FrameFormat();
             if (object.width != null)
                 message.width = object.width >>> 0;
@@ -12680,7 +13124,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
         function MirroringBus(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -12755,9 +13199,13 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        MirroringBus.decode = function decode(reader, length, error) {
+        MirroringBus.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.motors_mirroring.MirroringBus();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -12773,7 +13221,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -12804,9 +13252,13 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        MirroringBus.verify = function verify(message) {
+        MirroringBus.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.type != null && message.hasOwnProperty("type"))
                 switch (message.type) {
                 default:
@@ -12828,9 +13280,13 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {motors_mirroring.MirroringBus} MirroringBus
          */
-        MirroringBus.fromObject = function fromObject(object) {
+        MirroringBus.fromObject = function fromObject(object, long) {
             if (object instanceof $root.motors_mirroring.MirroringBus)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.motors_mirroring.MirroringBus();
             switch (object.type) {
             default:
@@ -12926,7 +13382,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
         function ModeEnvelope(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -13031,9 +13487,13 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        ModeEnvelope.decode = function decode(reader, length, error) {
+        ModeEnvelope.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.motors_mirroring.ModeEnvelope();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -13053,7 +13513,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                         break;
                     }
                 case 4: {
-                        message.bus = $root.motors_mirroring.MirroringBus.decode(reader, reader.uint32());
+                        message.bus = $root.motors_mirroring.MirroringBus.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 5: {
@@ -13061,7 +13521,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -13092,9 +13552,13 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        ModeEnvelope.verify = function verify(message) {
+        ModeEnvelope.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
                 if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
                     return "monotonicStampNs: integer|Long expected";
@@ -13105,7 +13569,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
                     return "appStartId: integer|Long expected";
             if (message.bus != null && message.hasOwnProperty("bus")) {
-                let error = $root.motors_mirroring.MirroringBus.verify(message.bus);
+                let error = $root.motors_mirroring.MirroringBus.verify(message.bus, long + 1);
                 if (error)
                     return "bus." + error;
             }
@@ -13129,9 +13593,13 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {motors_mirroring.ModeEnvelope} ModeEnvelope
          */
-        ModeEnvelope.fromObject = function fromObject(object) {
+        ModeEnvelope.fromObject = function fromObject(object, long) {
             if (object instanceof $root.motors_mirroring.ModeEnvelope)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.motors_mirroring.ModeEnvelope();
             if (object.monotonicStampNs != null)
                 if ($util.Long)
@@ -13163,7 +13631,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
             if (object.bus != null) {
                 if (typeof object.bus !== "object")
                     throw TypeError(".motors_mirroring.ModeEnvelope.bus: object expected");
-                message.bus = $root.motors_mirroring.MirroringBus.fromObject(object.bus);
+                message.bus = $root.motors_mirroring.MirroringBus.fromObject(object.bus, long + 1);
             }
             switch (object.mode) {
             default:
@@ -13308,7 +13776,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
             this.targets = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -13394,9 +13862,13 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        Command.decode = function decode(reader, length, error) {
+        Command.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.motors_mirroring.Command();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -13408,17 +13880,17 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                         break;
                     }
                 case 2: {
-                        message.source = $root.motors_mirroring.MirroringBus.decode(reader, reader.uint32());
+                        message.source = $root.motors_mirroring.MirroringBus.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 10: {
                         if (!(message.targets && message.targets.length))
                             message.targets = [];
-                        message.targets.push($root.motors_mirroring.MirroringBus.decode(reader, reader.uint32()));
+                        message.targets.push($root.motors_mirroring.MirroringBus.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -13449,9 +13921,13 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        Command.verify = function verify(message) {
+        Command.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.type != null && message.hasOwnProperty("type"))
                 switch (message.type) {
                 default:
@@ -13461,7 +13937,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                     break;
                 }
             if (message.source != null && message.hasOwnProperty("source")) {
-                let error = $root.motors_mirroring.MirroringBus.verify(message.source);
+                let error = $root.motors_mirroring.MirroringBus.verify(message.source, long + 1);
                 if (error)
                     return "source." + error;
             }
@@ -13469,7 +13945,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 if (!Array.isArray(message.targets))
                     return "targets: array expected";
                 for (let i = 0; i < message.targets.length; ++i) {
-                    let error = $root.motors_mirroring.MirroringBus.verify(message.targets[i]);
+                    let error = $root.motors_mirroring.MirroringBus.verify(message.targets[i], long + 1);
                     if (error)
                         return "targets." + error;
                 }
@@ -13485,9 +13961,13 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {motors_mirroring.Command} Command
          */
-        Command.fromObject = function fromObject(object) {
+        Command.fromObject = function fromObject(object, long) {
             if (object instanceof $root.motors_mirroring.Command)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.motors_mirroring.Command();
             switch (object.type) {
             default:
@@ -13508,7 +13988,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
             if (object.source != null) {
                 if (typeof object.source !== "object")
                     throw TypeError(".motors_mirroring.Command.source: object expected");
-                message.source = $root.motors_mirroring.MirroringBus.fromObject(object.source);
+                message.source = $root.motors_mirroring.MirroringBus.fromObject(object.source, long + 1);
             }
             if (object.targets) {
                 if (!Array.isArray(object.targets))
@@ -13517,7 +13997,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 for (let i = 0; i < object.targets.length; ++i) {
                     if (typeof object.targets[i] !== "object")
                         throw TypeError(".motors_mirroring.Command.targets: object expected");
-                    message.targets[i] = $root.motors_mirroring.MirroringBus.fromObject(object.targets[i]);
+                    message.targets[i] = $root.motors_mirroring.MirroringBus.fromObject(object.targets[i], long + 1);
                 }
             }
             return message;
@@ -13606,7 +14086,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
         function TxEnvelope(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -13701,9 +14181,13 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        TxEnvelope.decode = function decode(reader, length, error) {
+        TxEnvelope.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.motors_mirroring.TxEnvelope();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -13723,11 +14207,11 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                         break;
                     }
                 case 10: {
-                        message.command = $root.motors_mirroring.Command.decode(reader, reader.uint32());
+                        message.command = $root.motors_mirroring.Command.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -13758,9 +14242,13 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        TxEnvelope.verify = function verify(message) {
+        TxEnvelope.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
                 if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
                     return "monotonicStampNs: integer|Long expected";
@@ -13771,7 +14259,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
                     return "appStartId: integer|Long expected";
             if (message.command != null && message.hasOwnProperty("command")) {
-                let error = $root.motors_mirroring.Command.verify(message.command);
+                let error = $root.motors_mirroring.Command.verify(message.command, long + 1);
                 if (error)
                     return "command." + error;
             }
@@ -13786,9 +14274,13 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {motors_mirroring.TxEnvelope} TxEnvelope
          */
-        TxEnvelope.fromObject = function fromObject(object) {
+        TxEnvelope.fromObject = function fromObject(object, long) {
             if (object instanceof $root.motors_mirroring.TxEnvelope)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.motors_mirroring.TxEnvelope();
             if (object.monotonicStampNs != null)
                 if ($util.Long)
@@ -13820,7 +14312,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
             if (object.command != null) {
                 if (typeof object.command !== "object")
                     throw TypeError(".motors_mirroring.TxEnvelope.command: object expected");
-                message.command = $root.motors_mirroring.Command.fromObject(object.command);
+                message.command = $root.motors_mirroring.Command.fromObject(object.command, long + 1);
             }
             return message;
         };
@@ -13929,7 +14421,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
         function RxEnvelope(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -14034,9 +14526,13 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        RxEnvelope.decode = function decode(reader, length, error) {
+        RxEnvelope.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.motors_mirroring.RxEnvelope();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -14056,15 +14552,15 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                         break;
                     }
                 case 10: {
-                        message.state = $root.motors_mirroring.InferenceState.decode(reader, reader.uint32());
+                        message.state = $root.motors_mirroring.InferenceState.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 11: {
-                        message.command = $root.motors_mirroring.Command.decode(reader, reader.uint32());
+                        message.command = $root.motors_mirroring.Command.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -14095,9 +14591,13 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        RxEnvelope.verify = function verify(message) {
+        RxEnvelope.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
                 if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
                     return "monotonicStampNs: integer|Long expected";
@@ -14108,12 +14608,12 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
                     return "appStartId: integer|Long expected";
             if (message.state != null && message.hasOwnProperty("state")) {
-                let error = $root.motors_mirroring.InferenceState.verify(message.state);
+                let error = $root.motors_mirroring.InferenceState.verify(message.state, long + 1);
                 if (error)
                     return "state." + error;
             }
             if (message.command != null && message.hasOwnProperty("command")) {
-                let error = $root.motors_mirroring.Command.verify(message.command);
+                let error = $root.motors_mirroring.Command.verify(message.command, long + 1);
                 if (error)
                     return "command." + error;
             }
@@ -14128,9 +14628,13 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {motors_mirroring.RxEnvelope} RxEnvelope
          */
-        RxEnvelope.fromObject = function fromObject(object) {
+        RxEnvelope.fromObject = function fromObject(object, long) {
             if (object instanceof $root.motors_mirroring.RxEnvelope)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.motors_mirroring.RxEnvelope();
             if (object.monotonicStampNs != null)
                 if ($util.Long)
@@ -14162,12 +14666,12 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
             if (object.state != null) {
                 if (typeof object.state !== "object")
                     throw TypeError(".motors_mirroring.RxEnvelope.state: object expected");
-                message.state = $root.motors_mirroring.InferenceState.fromObject(object.state);
+                message.state = $root.motors_mirroring.InferenceState.fromObject(object.state, long + 1);
             }
             if (object.command != null) {
                 if (typeof object.command !== "object")
                     throw TypeError(".motors_mirroring.RxEnvelope.command: object expected");
-                message.command = $root.motors_mirroring.Command.fromObject(object.command);
+                message.command = $root.motors_mirroring.Command.fromObject(object.command, long + 1);
             }
             return message;
         };
@@ -14278,7 +14782,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
             this.mirroring = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -14355,9 +14859,13 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        InferenceState.decode = function decode(reader, length, error) {
+        InferenceState.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.motors_mirroring.InferenceState();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -14367,17 +14875,17 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 case 10: {
                         if (!(message.modes && message.modes.length))
                             message.modes = [];
-                        message.modes.push($root.motors_mirroring.InferenceState.Bus.decode(reader, reader.uint32()));
+                        message.modes.push($root.motors_mirroring.InferenceState.Bus.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 case 11: {
                         if (!(message.mirroring && message.mirroring.length))
                             message.mirroring = [];
-                        message.mirroring.push($root.motors_mirroring.InferenceState.Mirroring.decode(reader, reader.uint32()));
+                        message.mirroring.push($root.motors_mirroring.InferenceState.Mirroring.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -14408,14 +14916,18 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        InferenceState.verify = function verify(message) {
+        InferenceState.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.modes != null && message.hasOwnProperty("modes")) {
                 if (!Array.isArray(message.modes))
                     return "modes: array expected";
                 for (let i = 0; i < message.modes.length; ++i) {
-                    let error = $root.motors_mirroring.InferenceState.Bus.verify(message.modes[i]);
+                    let error = $root.motors_mirroring.InferenceState.Bus.verify(message.modes[i], long + 1);
                     if (error)
                         return "modes." + error;
                 }
@@ -14424,7 +14936,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 if (!Array.isArray(message.mirroring))
                     return "mirroring: array expected";
                 for (let i = 0; i < message.mirroring.length; ++i) {
-                    let error = $root.motors_mirroring.InferenceState.Mirroring.verify(message.mirroring[i]);
+                    let error = $root.motors_mirroring.InferenceState.Mirroring.verify(message.mirroring[i], long + 1);
                     if (error)
                         return "mirroring." + error;
                 }
@@ -14440,9 +14952,13 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {motors_mirroring.InferenceState} InferenceState
          */
-        InferenceState.fromObject = function fromObject(object) {
+        InferenceState.fromObject = function fromObject(object, long) {
             if (object instanceof $root.motors_mirroring.InferenceState)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.motors_mirroring.InferenceState();
             if (object.modes) {
                 if (!Array.isArray(object.modes))
@@ -14451,7 +14967,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 for (let i = 0; i < object.modes.length; ++i) {
                     if (typeof object.modes[i] !== "object")
                         throw TypeError(".motors_mirroring.InferenceState.modes: object expected");
-                    message.modes[i] = $root.motors_mirroring.InferenceState.Bus.fromObject(object.modes[i]);
+                    message.modes[i] = $root.motors_mirroring.InferenceState.Bus.fromObject(object.modes[i], long + 1);
                 }
             }
             if (object.mirroring) {
@@ -14461,7 +14977,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 for (let i = 0; i < object.mirroring.length; ++i) {
                     if (typeof object.mirroring[i] !== "object")
                         throw TypeError(".motors_mirroring.InferenceState.mirroring: object expected");
-                    message.mirroring[i] = $root.motors_mirroring.InferenceState.Mirroring.fromObject(object.mirroring[i]);
+                    message.mirroring[i] = $root.motors_mirroring.InferenceState.Mirroring.fromObject(object.mirroring[i], long + 1);
                 }
             }
             return message;
@@ -14544,7 +15060,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
             function Bus(properties) {
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
+                        if (properties[keys[i]] != null && keys[i] !== "__proto__")
                             this[keys[i]] = properties[keys[i]];
             }
 
@@ -14619,9 +15135,13 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            Bus.decode = function decode(reader, length, error) {
+            Bus.decode = function decode(reader, length, error, long) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
+                if (long === undefined)
+                    long = 0;
+                if (long > $Reader.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let end = length === undefined ? reader.len : reader.pos + length, message = new $root.motors_mirroring.InferenceState.Bus();
                 while (reader.pos < end) {
                     let tag = reader.uint32();
@@ -14629,7 +15149,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                         break;
                     switch (tag >>> 3) {
                     case 1: {
-                            message.id = $root.motors_mirroring.MirroringBus.decode(reader, reader.uint32());
+                            message.id = $root.motors_mirroring.MirroringBus.decode(reader, reader.uint32(), undefined, long + 1);
                             break;
                         }
                     case 2: {
@@ -14637,7 +15157,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                             break;
                         }
                     default:
-                        reader.skipType(tag & 7);
+                        reader.skipType(tag & 7, long);
                         break;
                     }
                 }
@@ -14668,11 +15188,15 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
              * @param {Object.<string,*>} message Plain object to verify
              * @returns {string|null} `null` if valid, otherwise the reason why it is not
              */
-            Bus.verify = function verify(message) {
+            Bus.verify = function verify(message, long) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    return "maximum nesting depth exceeded";
                 if (message.id != null && message.hasOwnProperty("id")) {
-                    let error = $root.motors_mirroring.MirroringBus.verify(message.id);
+                    let error = $root.motors_mirroring.MirroringBus.verify(message.id, long + 1);
                     if (error)
                         return "id." + error;
                 }
@@ -14696,14 +15220,18 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
              * @param {Object.<string,*>} object Plain object
              * @returns {motors_mirroring.InferenceState.Bus} Bus
              */
-            Bus.fromObject = function fromObject(object) {
+            Bus.fromObject = function fromObject(object, long) {
                 if (object instanceof $root.motors_mirroring.InferenceState.Bus)
                     return object;
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let message = new $root.motors_mirroring.InferenceState.Bus();
                 if (object.id != null) {
                     if (typeof object.id !== "object")
                         throw TypeError(".motors_mirroring.InferenceState.Bus.id: object expected");
-                    message.id = $root.motors_mirroring.MirroringBus.fromObject(object.id);
+                    message.id = $root.motors_mirroring.MirroringBus.fromObject(object.id, long + 1);
                 }
                 switch (object.mode) {
                 default:
@@ -14803,7 +15331,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 this.targets = [];
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
+                        if (properties[keys[i]] != null && keys[i] !== "__proto__")
                             this[keys[i]] = properties[keys[i]];
             }
 
@@ -14879,9 +15407,13 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            Mirroring.decode = function decode(reader, length, error) {
+            Mirroring.decode = function decode(reader, length, error, long) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
+                if (long === undefined)
+                    long = 0;
+                if (long > $Reader.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let end = length === undefined ? reader.len : reader.pos + length, message = new $root.motors_mirroring.InferenceState.Mirroring();
                 while (reader.pos < end) {
                     let tag = reader.uint32();
@@ -14889,17 +15421,17 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                         break;
                     switch (tag >>> 3) {
                     case 1: {
-                            message.source = $root.motors_mirroring.InferenceState.Bus.decode(reader, reader.uint32());
+                            message.source = $root.motors_mirroring.InferenceState.Bus.decode(reader, reader.uint32(), undefined, long + 1);
                             break;
                         }
                     case 10: {
                             if (!(message.targets && message.targets.length))
                                 message.targets = [];
-                            message.targets.push($root.motors_mirroring.InferenceState.Bus.decode(reader, reader.uint32()));
+                            message.targets.push($root.motors_mirroring.InferenceState.Bus.decode(reader, reader.uint32(), undefined, long + 1));
                             break;
                         }
                     default:
-                        reader.skipType(tag & 7);
+                        reader.skipType(tag & 7, long);
                         break;
                     }
                 }
@@ -14930,11 +15462,15 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
              * @param {Object.<string,*>} message Plain object to verify
              * @returns {string|null} `null` if valid, otherwise the reason why it is not
              */
-            Mirroring.verify = function verify(message) {
+            Mirroring.verify = function verify(message, long) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    return "maximum nesting depth exceeded";
                 if (message.source != null && message.hasOwnProperty("source")) {
-                    let error = $root.motors_mirroring.InferenceState.Bus.verify(message.source);
+                    let error = $root.motors_mirroring.InferenceState.Bus.verify(message.source, long + 1);
                     if (error)
                         return "source." + error;
                 }
@@ -14942,7 +15478,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                     if (!Array.isArray(message.targets))
                         return "targets: array expected";
                     for (let i = 0; i < message.targets.length; ++i) {
-                        let error = $root.motors_mirroring.InferenceState.Bus.verify(message.targets[i]);
+                        let error = $root.motors_mirroring.InferenceState.Bus.verify(message.targets[i], long + 1);
                         if (error)
                             return "targets." + error;
                     }
@@ -14958,14 +15494,18 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
              * @param {Object.<string,*>} object Plain object
              * @returns {motors_mirroring.InferenceState.Mirroring} Mirroring
              */
-            Mirroring.fromObject = function fromObject(object) {
+            Mirroring.fromObject = function fromObject(object, long) {
                 if (object instanceof $root.motors_mirroring.InferenceState.Mirroring)
                     return object;
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let message = new $root.motors_mirroring.InferenceState.Mirroring();
                 if (object.source != null) {
                     if (typeof object.source !== "object")
                         throw TypeError(".motors_mirroring.InferenceState.Mirroring.source: object expected");
-                    message.source = $root.motors_mirroring.InferenceState.Bus.fromObject(object.source);
+                    message.source = $root.motors_mirroring.InferenceState.Bus.fromObject(object.source, long + 1);
                 }
                 if (object.targets) {
                     if (!Array.isArray(object.targets))
@@ -14974,7 +15514,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                     for (let i = 0; i < object.targets.length; ++i) {
                         if (typeof object.targets[i] !== "object")
                             throw TypeError(".motors_mirroring.InferenceState.Mirroring.targets: object expected");
-                        message.targets[i] = $root.motors_mirroring.InferenceState.Bus.fromObject(object.targets[i]);
+                        message.targets[i] = $root.motors_mirroring.InferenceState.Bus.fromObject(object.targets[i], long + 1);
                     }
                 }
                 return message;
@@ -15074,7 +15614,7 @@ export const sysinfo = $root.sysinfo = (() => {
         function Envelope(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -15169,9 +15709,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        Envelope.decode = function decode(reader, length, error) {
+        Envelope.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.sysinfo.Envelope();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -15191,11 +15735,11 @@ export const sysinfo = $root.sysinfo = (() => {
                         break;
                     }
                 case 10: {
-                        message.data = $root.sysinfo.EnvelopeData.decode(reader, reader.uint32());
+                        message.data = $root.sysinfo.EnvelopeData.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -15226,9 +15770,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        Envelope.verify = function verify(message) {
+        Envelope.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
                 if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
                     return "monotonicStampNs: integer|Long expected";
@@ -15239,7 +15787,7 @@ export const sysinfo = $root.sysinfo = (() => {
                 if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
                     return "appStartId: integer|Long expected";
             if (message.data != null && message.hasOwnProperty("data")) {
-                let error = $root.sysinfo.EnvelopeData.verify(message.data);
+                let error = $root.sysinfo.EnvelopeData.verify(message.data, long + 1);
                 if (error)
                     return "data." + error;
             }
@@ -15254,9 +15802,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {sysinfo.Envelope} Envelope
          */
-        Envelope.fromObject = function fromObject(object) {
+        Envelope.fromObject = function fromObject(object, long) {
             if (object instanceof $root.sysinfo.Envelope)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.sysinfo.Envelope();
             if (object.monotonicStampNs != null)
                 if ($util.Long)
@@ -15288,7 +15840,7 @@ export const sysinfo = $root.sysinfo = (() => {
             if (object.data != null) {
                 if (typeof object.data !== "object")
                     throw TypeError(".sysinfo.Envelope.data: object expected");
-                message.data = $root.sysinfo.EnvelopeData.fromObject(object.data);
+                message.data = $root.sysinfo.EnvelopeData.fromObject(object.data, long + 1);
             }
             return message;
         };
@@ -15394,7 +15946,7 @@ export const sysinfo = $root.sysinfo = (() => {
             this.rxPtrs = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -15460,9 +16012,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        InferenceStatePtr.decode = function decode(reader, length, error) {
+        InferenceStatePtr.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.sysinfo.InferenceStatePtr();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -15476,7 +16032,7 @@ export const sysinfo = $root.sysinfo = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -15507,9 +16063,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        InferenceStatePtr.verify = function verify(message) {
+        InferenceStatePtr.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.rxPtrs != null && message.hasOwnProperty("rxPtrs")) {
                 if (!Array.isArray(message.rxPtrs))
                     return "rxPtrs: array expected";
@@ -15528,9 +16088,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {sysinfo.InferenceStatePtr} InferenceStatePtr
          */
-        InferenceStatePtr.fromObject = function fromObject(object) {
+        InferenceStatePtr.fromObject = function fromObject(object, long) {
             if (object instanceof $root.sysinfo.InferenceStatePtr)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.sysinfo.InferenceStatePtr();
             if (object.rxPtrs) {
                 if (!Array.isArray(object.rxPtrs))
@@ -15635,7 +16199,7 @@ export const sysinfo = $root.sysinfo = (() => {
             this.temperatures = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -15835,9 +16399,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        EnvelopeData.decode = function decode(reader, length, error) {
+        EnvelopeData.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.sysinfo.EnvelopeData();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -15845,19 +16413,19 @@ export const sysinfo = $root.sysinfo = (() => {
                     break;
                 switch (tag >>> 3) {
                 case 1: {
-                        message.os = $root.sysinfo.OsInfo.decode(reader, reader.uint32());
+                        message.os = $root.sysinfo.OsInfo.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 2: {
-                        message.time = $root.sysinfo.TimeInfo.decode(reader, reader.uint32());
+                        message.time = $root.sysinfo.TimeInfo.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 3: {
-                        message.memory = $root.sysinfo.Memory.decode(reader, reader.uint32());
+                        message.memory = $root.sysinfo.Memory.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 4: {
-                        message.motherboard = $root.sysinfo.Motherboard.decode(reader, reader.uint32());
+                        message.motherboard = $root.sysinfo.Motherboard.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 5: {
@@ -15883,35 +16451,35 @@ export const sysinfo = $root.sysinfo = (() => {
                 case 10: {
                         if (!(message.users && message.users.length))
                             message.users = [];
-                        message.users.push($root.sysinfo.User.decode(reader, reader.uint32()));
+                        message.users.push($root.sysinfo.User.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 case 11: {
                         if (!(message.cpu && message.cpu.length))
                             message.cpu = [];
-                        message.cpu.push($root.sysinfo.CPU.decode(reader, reader.uint32()));
+                        message.cpu.push($root.sysinfo.CPU.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 case 12: {
                         if (!(message.disks && message.disks.length))
                             message.disks = [];
-                        message.disks.push($root.sysinfo.Disk.decode(reader, reader.uint32()));
+                        message.disks.push($root.sysinfo.Disk.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 case 13: {
                         if (!(message.networks && message.networks.length))
                             message.networks = [];
-                        message.networks.push($root.sysinfo.Network.decode(reader, reader.uint32()));
+                        message.networks.push($root.sysinfo.Network.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 case 20: {
                         if (!(message.temperatures && message.temperatures.length))
                             message.temperatures = [];
-                        message.temperatures.push($root.sysinfo.TemperatureSensor.decode(reader, reader.uint32()));
+                        message.temperatures.push($root.sysinfo.TemperatureSensor.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -15942,26 +16510,30 @@ export const sysinfo = $root.sysinfo = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        EnvelopeData.verify = function verify(message) {
+        EnvelopeData.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.os != null && message.hasOwnProperty("os")) {
-                let error = $root.sysinfo.OsInfo.verify(message.os);
+                let error = $root.sysinfo.OsInfo.verify(message.os, long + 1);
                 if (error)
                     return "os." + error;
             }
             if (message.time != null && message.hasOwnProperty("time")) {
-                let error = $root.sysinfo.TimeInfo.verify(message.time);
+                let error = $root.sysinfo.TimeInfo.verify(message.time, long + 1);
                 if (error)
                     return "time." + error;
             }
             if (message.memory != null && message.hasOwnProperty("memory")) {
-                let error = $root.sysinfo.Memory.verify(message.memory);
+                let error = $root.sysinfo.Memory.verify(message.memory, long + 1);
                 if (error)
                     return "memory." + error;
             }
             if (message.motherboard != null && message.hasOwnProperty("motherboard")) {
-                let error = $root.sysinfo.Motherboard.verify(message.motherboard);
+                let error = $root.sysinfo.Motherboard.verify(message.motherboard, long + 1);
                 if (error)
                     return "motherboard." + error;
             }
@@ -15984,7 +16556,7 @@ export const sysinfo = $root.sysinfo = (() => {
                 if (!Array.isArray(message.users))
                     return "users: array expected";
                 for (let i = 0; i < message.users.length; ++i) {
-                    let error = $root.sysinfo.User.verify(message.users[i]);
+                    let error = $root.sysinfo.User.verify(message.users[i], long + 1);
                     if (error)
                         return "users." + error;
                 }
@@ -15993,7 +16565,7 @@ export const sysinfo = $root.sysinfo = (() => {
                 if (!Array.isArray(message.cpu))
                     return "cpu: array expected";
                 for (let i = 0; i < message.cpu.length; ++i) {
-                    let error = $root.sysinfo.CPU.verify(message.cpu[i]);
+                    let error = $root.sysinfo.CPU.verify(message.cpu[i], long + 1);
                     if (error)
                         return "cpu." + error;
                 }
@@ -16002,7 +16574,7 @@ export const sysinfo = $root.sysinfo = (() => {
                 if (!Array.isArray(message.disks))
                     return "disks: array expected";
                 for (let i = 0; i < message.disks.length; ++i) {
-                    let error = $root.sysinfo.Disk.verify(message.disks[i]);
+                    let error = $root.sysinfo.Disk.verify(message.disks[i], long + 1);
                     if (error)
                         return "disks." + error;
                 }
@@ -16011,7 +16583,7 @@ export const sysinfo = $root.sysinfo = (() => {
                 if (!Array.isArray(message.networks))
                     return "networks: array expected";
                 for (let i = 0; i < message.networks.length; ++i) {
-                    let error = $root.sysinfo.Network.verify(message.networks[i]);
+                    let error = $root.sysinfo.Network.verify(message.networks[i], long + 1);
                     if (error)
                         return "networks." + error;
                 }
@@ -16020,7 +16592,7 @@ export const sysinfo = $root.sysinfo = (() => {
                 if (!Array.isArray(message.temperatures))
                     return "temperatures: array expected";
                 for (let i = 0; i < message.temperatures.length; ++i) {
-                    let error = $root.sysinfo.TemperatureSensor.verify(message.temperatures[i]);
+                    let error = $root.sysinfo.TemperatureSensor.verify(message.temperatures[i], long + 1);
                     if (error)
                         return "temperatures." + error;
                 }
@@ -16036,29 +16608,33 @@ export const sysinfo = $root.sysinfo = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {sysinfo.EnvelopeData} EnvelopeData
          */
-        EnvelopeData.fromObject = function fromObject(object) {
+        EnvelopeData.fromObject = function fromObject(object, long) {
             if (object instanceof $root.sysinfo.EnvelopeData)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.sysinfo.EnvelopeData();
             if (object.os != null) {
                 if (typeof object.os !== "object")
                     throw TypeError(".sysinfo.EnvelopeData.os: object expected");
-                message.os = $root.sysinfo.OsInfo.fromObject(object.os);
+                message.os = $root.sysinfo.OsInfo.fromObject(object.os, long + 1);
             }
             if (object.time != null) {
                 if (typeof object.time !== "object")
                     throw TypeError(".sysinfo.EnvelopeData.time: object expected");
-                message.time = $root.sysinfo.TimeInfo.fromObject(object.time);
+                message.time = $root.sysinfo.TimeInfo.fromObject(object.time, long + 1);
             }
             if (object.memory != null) {
                 if (typeof object.memory !== "object")
                     throw TypeError(".sysinfo.EnvelopeData.memory: object expected");
-                message.memory = $root.sysinfo.Memory.fromObject(object.memory);
+                message.memory = $root.sysinfo.Memory.fromObject(object.memory, long + 1);
             }
             if (object.motherboard != null) {
                 if (typeof object.motherboard !== "object")
                     throw TypeError(".sysinfo.EnvelopeData.motherboard: object expected");
-                message.motherboard = $root.sysinfo.Motherboard.fromObject(object.motherboard);
+                message.motherboard = $root.sysinfo.Motherboard.fromObject(object.motherboard, long + 1);
             }
             if (object.hostname != null)
                 message.hostname = String(object.hostname);
@@ -16084,7 +16660,7 @@ export const sysinfo = $root.sysinfo = (() => {
                 for (let i = 0; i < object.users.length; ++i) {
                     if (typeof object.users[i] !== "object")
                         throw TypeError(".sysinfo.EnvelopeData.users: object expected");
-                    message.users[i] = $root.sysinfo.User.fromObject(object.users[i]);
+                    message.users[i] = $root.sysinfo.User.fromObject(object.users[i], long + 1);
                 }
             }
             if (object.cpu) {
@@ -16094,7 +16670,7 @@ export const sysinfo = $root.sysinfo = (() => {
                 for (let i = 0; i < object.cpu.length; ++i) {
                     if (typeof object.cpu[i] !== "object")
                         throw TypeError(".sysinfo.EnvelopeData.cpu: object expected");
-                    message.cpu[i] = $root.sysinfo.CPU.fromObject(object.cpu[i]);
+                    message.cpu[i] = $root.sysinfo.CPU.fromObject(object.cpu[i], long + 1);
                 }
             }
             if (object.disks) {
@@ -16104,7 +16680,7 @@ export const sysinfo = $root.sysinfo = (() => {
                 for (let i = 0; i < object.disks.length; ++i) {
                     if (typeof object.disks[i] !== "object")
                         throw TypeError(".sysinfo.EnvelopeData.disks: object expected");
-                    message.disks[i] = $root.sysinfo.Disk.fromObject(object.disks[i]);
+                    message.disks[i] = $root.sysinfo.Disk.fromObject(object.disks[i], long + 1);
                 }
             }
             if (object.networks) {
@@ -16114,7 +16690,7 @@ export const sysinfo = $root.sysinfo = (() => {
                 for (let i = 0; i < object.networks.length; ++i) {
                     if (typeof object.networks[i] !== "object")
                         throw TypeError(".sysinfo.EnvelopeData.networks: object expected");
-                    message.networks[i] = $root.sysinfo.Network.fromObject(object.networks[i]);
+                    message.networks[i] = $root.sysinfo.Network.fromObject(object.networks[i], long + 1);
                 }
             }
             if (object.temperatures) {
@@ -16124,7 +16700,7 @@ export const sysinfo = $root.sysinfo = (() => {
                 for (let i = 0; i < object.temperatures.length; ++i) {
                     if (typeof object.temperatures[i] !== "object")
                         throw TypeError(".sysinfo.EnvelopeData.temperatures: object expected");
-                    message.temperatures[i] = $root.sysinfo.TemperatureSensor.fromObject(object.temperatures[i]);
+                    message.temperatures[i] = $root.sysinfo.TemperatureSensor.fromObject(object.temperatures[i], long + 1);
                 }
             }
             return message;
@@ -16265,7 +16841,7 @@ export const sysinfo = $root.sysinfo = (() => {
         function OsInfo(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -16350,9 +16926,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        OsInfo.decode = function decode(reader, length, error) {
+        OsInfo.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.sysinfo.OsInfo();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -16372,7 +16952,7 @@ export const sysinfo = $root.sysinfo = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -16403,9 +16983,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        OsInfo.verify = function verify(message) {
+        OsInfo.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.name != null && message.hasOwnProperty("name"))
                 if (!$util.isString(message.name))
                     return "name: string expected";
@@ -16426,9 +17010,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {sysinfo.OsInfo} OsInfo
          */
-        OsInfo.fromObject = function fromObject(object) {
+        OsInfo.fromObject = function fromObject(object, long) {
             if (object instanceof $root.sysinfo.OsInfo)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.sysinfo.OsInfo();
             if (object.name != null)
                 message.name = String(object.name);
@@ -16515,7 +17103,7 @@ export const sysinfo = $root.sysinfo = (() => {
         function TimeInfo(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -16580,9 +17168,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        TimeInfo.decode = function decode(reader, length, error) {
+        TimeInfo.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.sysinfo.TimeInfo();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -16594,7 +17186,7 @@ export const sysinfo = $root.sysinfo = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -16625,9 +17217,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        TimeInfo.verify = function verify(message) {
+        TimeInfo.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.utcOffsetSeconds != null && message.hasOwnProperty("utcOffsetSeconds"))
                 if (!$util.isInteger(message.utcOffsetSeconds) && !(message.utcOffsetSeconds && $util.isInteger(message.utcOffsetSeconds.low) && $util.isInteger(message.utcOffsetSeconds.high)))
                     return "utcOffsetSeconds: integer|Long expected";
@@ -16642,9 +17238,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {sysinfo.TimeInfo} TimeInfo
          */
-        TimeInfo.fromObject = function fromObject(object) {
+        TimeInfo.fromObject = function fromObject(object, long) {
             if (object instanceof $root.sysinfo.TimeInfo)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.sysinfo.TimeInfo();
             if (object.utcOffsetSeconds != null)
                 if ($util.Long)
@@ -16737,7 +17337,7 @@ export const sysinfo = $root.sysinfo = (() => {
         function Memory(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -16832,9 +17432,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        Memory.decode = function decode(reader, length, error) {
+        Memory.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.sysinfo.Memory();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -16858,7 +17462,7 @@ export const sysinfo = $root.sysinfo = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -16889,9 +17493,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        Memory.verify = function verify(message) {
+        Memory.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.totalBytes != null && message.hasOwnProperty("totalBytes"))
                 if (!$util.isInteger(message.totalBytes) && !(message.totalBytes && $util.isInteger(message.totalBytes.low) && $util.isInteger(message.totalBytes.high)))
                     return "totalBytes: integer|Long expected";
@@ -16915,9 +17523,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {sysinfo.Memory} Memory
          */
-        Memory.fromObject = function fromObject(object) {
+        Memory.fromObject = function fromObject(object, long) {
             if (object instanceof $root.sysinfo.Memory)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.sysinfo.Memory();
             if (object.totalBytes != null)
                 if ($util.Long)
@@ -17069,7 +17681,7 @@ export const sysinfo = $root.sysinfo = (() => {
         function CPU(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -17174,9 +17786,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        CPU.decode = function decode(reader, length, error) {
+        CPU.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.sysinfo.CPU();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -17204,7 +17820,7 @@ export const sysinfo = $root.sysinfo = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -17235,9 +17851,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        CPU.verify = function verify(message) {
+        CPU.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.name != null && message.hasOwnProperty("name"))
                 if (!$util.isString(message.name))
                     return "name: string expected";
@@ -17264,9 +17884,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {sysinfo.CPU} CPU
          */
-        CPU.fromObject = function fromObject(object) {
+        CPU.fromObject = function fromObject(object, long) {
             if (object instanceof $root.sysinfo.CPU)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.sysinfo.CPU();
             if (object.name != null)
                 message.name = String(object.name);
@@ -17386,7 +18010,7 @@ export const sysinfo = $root.sysinfo = (() => {
         function Disk(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -17541,9 +18165,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        Disk.decode = function decode(reader, length, error) {
+        Disk.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.sysinfo.Disk();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -17591,7 +18219,7 @@ export const sysinfo = $root.sysinfo = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -17622,9 +18250,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        Disk.verify = function verify(message) {
+        Disk.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.kind != null && message.hasOwnProperty("kind"))
                 if (!$util.isString(message.kind))
                     return "kind: string expected";
@@ -17666,9 +18298,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {sysinfo.Disk} Disk
          */
-        Disk.fromObject = function fromObject(object) {
+        Disk.fromObject = function fromObject(object, long) {
             if (object instanceof $root.sysinfo.Disk)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.sysinfo.Disk();
             if (object.kind != null)
                 message.kind = String(object.kind);
@@ -17850,7 +18486,7 @@ export const sysinfo = $root.sysinfo = (() => {
         function Motherboard(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -17955,9 +18591,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        Motherboard.decode = function decode(reader, length, error) {
+        Motherboard.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.sysinfo.Motherboard();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -17985,7 +18625,7 @@ export const sysinfo = $root.sysinfo = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -18016,9 +18656,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        Motherboard.verify = function verify(message) {
+        Motherboard.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.name != null && message.hasOwnProperty("name"))
                 if (!$util.isString(message.name))
                     return "name: string expected";
@@ -18045,9 +18689,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {sysinfo.Motherboard} Motherboard
          */
-        Motherboard.fromObject = function fromObject(object) {
+        Motherboard.fromObject = function fromObject(object, long) {
             if (object instanceof $root.sysinfo.Motherboard)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.sysinfo.Motherboard();
             if (object.name != null)
                 message.name = String(object.name);
@@ -18146,7 +18794,7 @@ export const sysinfo = $root.sysinfo = (() => {
             this.groups = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -18222,9 +18870,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        User.decode = function decode(reader, length, error) {
+        User.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.sysinfo.User();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -18242,7 +18894,7 @@ export const sysinfo = $root.sysinfo = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -18273,9 +18925,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        User.verify = function verify(message) {
+        User.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.name != null && message.hasOwnProperty("name"))
                 if (!$util.isString(message.name))
                     return "name: string expected";
@@ -18297,9 +18953,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {sysinfo.User} User
          */
-        User.fromObject = function fromObject(object) {
+        User.fromObject = function fromObject(object, long) {
             if (object instanceof $root.sysinfo.User)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.sysinfo.User();
             if (object.name != null)
                 message.name = String(object.name);
@@ -18389,7 +19049,7 @@ export const sysinfo = $root.sysinfo = (() => {
         function NetworkIp(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -18454,9 +19114,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        NetworkIp.decode = function decode(reader, length, error) {
+        NetworkIp.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.sysinfo.NetworkIp();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -18468,7 +19132,7 @@ export const sysinfo = $root.sysinfo = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -18499,9 +19163,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        NetworkIp.verify = function verify(message) {
+        NetworkIp.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.addr != null && message.hasOwnProperty("addr"))
                 if (!$util.isString(message.addr))
                     return "addr: string expected";
@@ -18516,9 +19184,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {sysinfo.NetworkIp} NetworkIp
          */
-        NetworkIp.fromObject = function fromObject(object) {
+        NetworkIp.fromObject = function fromObject(object, long) {
             if (object instanceof $root.sysinfo.NetworkIp)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.sysinfo.NetworkIp();
             if (object.addr != null)
                 message.addr = String(object.addr);
@@ -18603,7 +19275,7 @@ export const sysinfo = $root.sysinfo = (() => {
             this.ips = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -18749,9 +19421,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        Network.decode = function decode(reader, length, error) {
+        Network.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.sysinfo.Network();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -18769,7 +19445,7 @@ export const sysinfo = $root.sysinfo = (() => {
                 case 10: {
                         if (!(message.ips && message.ips.length))
                             message.ips = [];
-                        message.ips.push($root.sysinfo.NetworkIp.decode(reader, reader.uint32()));
+                        message.ips.push($root.sysinfo.NetworkIp.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 case 20: {
@@ -18797,7 +19473,7 @@ export const sysinfo = $root.sysinfo = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -18828,9 +19504,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        Network.verify = function verify(message) {
+        Network.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.iface != null && message.hasOwnProperty("iface"))
                 if (!$util.isString(message.iface))
                     return "iface: string expected";
@@ -18841,7 +19521,7 @@ export const sysinfo = $root.sysinfo = (() => {
                 if (!Array.isArray(message.ips))
                     return "ips: array expected";
                 for (let i = 0; i < message.ips.length; ++i) {
-                    let error = $root.sysinfo.NetworkIp.verify(message.ips[i]);
+                    let error = $root.sysinfo.NetworkIp.verify(message.ips[i], long + 1);
                     if (error)
                         return "ips." + error;
                 }
@@ -18875,9 +19555,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {sysinfo.Network} Network
          */
-        Network.fromObject = function fromObject(object) {
+        Network.fromObject = function fromObject(object, long) {
             if (object instanceof $root.sysinfo.Network)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.sysinfo.Network();
             if (object.iface != null)
                 message.iface = String(object.iface);
@@ -18890,7 +19574,7 @@ export const sysinfo = $root.sysinfo = (() => {
                 for (let i = 0; i < object.ips.length; ++i) {
                     if (typeof object.ips[i] !== "object")
                         throw TypeError(".sysinfo.Network.ips: object expected");
-                    message.ips[i] = $root.sysinfo.NetworkIp.fromObject(object.ips[i]);
+                    message.ips[i] = $root.sysinfo.NetworkIp.fromObject(object.ips[i], long + 1);
                 }
             }
             if (object.bytesReceived != null)
@@ -19094,7 +19778,7 @@ export const sysinfo = $root.sysinfo = (() => {
         function TemperatureSensor(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -19199,9 +19883,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        TemperatureSensor.decode = function decode(reader, length, error) {
+        TemperatureSensor.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.sysinfo.TemperatureSensor();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -19229,7 +19917,7 @@ export const sysinfo = $root.sysinfo = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -19260,9 +19948,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        TemperatureSensor.verify = function verify(message) {
+        TemperatureSensor.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.id != null && message.hasOwnProperty("id"))
                 if (!$util.isString(message.id))
                     return "id: string expected";
@@ -19289,9 +19981,13 @@ export const sysinfo = $root.sysinfo = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {sysinfo.TemperatureSensor} TemperatureSensor
          */
-        TemperatureSensor.fromObject = function fromObject(object) {
+        TemperatureSensor.fromObject = function fromObject(object, long) {
             if (object instanceof $root.sysinfo.TemperatureSensor)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.sysinfo.TemperatureSensor();
             if (object.id != null)
                 message.id = String(object.id);
@@ -19405,7 +20101,7 @@ export const normvla = $root.normvla = (() => {
             this.images = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -19502,9 +20198,13 @@ export const normvla = $root.normvla = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        Frame.decode = function decode(reader, length, error) {
+        Frame.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.normvla.Frame();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -19522,17 +20222,17 @@ export const normvla = $root.normvla = (() => {
                 case 10: {
                         if (!(message.joints && message.joints.length))
                             message.joints = [];
-                        message.joints.push($root.normvla.Joint.decode(reader, reader.uint32()));
+                        message.joints.push($root.normvla.Joint.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 case 11: {
                         if (!(message.images && message.images.length))
                             message.images = [];
-                        message.images.push($root.normvla.Image.decode(reader, reader.uint32()));
+                        message.images.push($root.normvla.Image.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -19563,9 +20263,13 @@ export const normvla = $root.normvla = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        Frame.verify = function verify(message) {
+        Frame.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.globalFrameId != null && message.hasOwnProperty("globalFrameId"))
                 if (!(message.globalFrameId && typeof message.globalFrameId.length === "number" || $util.isString(message.globalFrameId)))
                     return "globalFrameId: buffer expected";
@@ -19576,7 +20280,7 @@ export const normvla = $root.normvla = (() => {
                 if (!Array.isArray(message.joints))
                     return "joints: array expected";
                 for (let i = 0; i < message.joints.length; ++i) {
-                    let error = $root.normvla.Joint.verify(message.joints[i]);
+                    let error = $root.normvla.Joint.verify(message.joints[i], long + 1);
                     if (error)
                         return "joints." + error;
                 }
@@ -19585,7 +20289,7 @@ export const normvla = $root.normvla = (() => {
                 if (!Array.isArray(message.images))
                     return "images: array expected";
                 for (let i = 0; i < message.images.length; ++i) {
-                    let error = $root.normvla.Image.verify(message.images[i]);
+                    let error = $root.normvla.Image.verify(message.images[i], long + 1);
                     if (error)
                         return "images." + error;
                 }
@@ -19601,9 +20305,13 @@ export const normvla = $root.normvla = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {normvla.Frame} Frame
          */
-        Frame.fromObject = function fromObject(object) {
+        Frame.fromObject = function fromObject(object, long) {
             if (object instanceof $root.normvla.Frame)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.normvla.Frame();
             if (object.globalFrameId != null)
                 if (typeof object.globalFrameId === "string")
@@ -19626,7 +20334,7 @@ export const normvla = $root.normvla = (() => {
                 for (let i = 0; i < object.joints.length; ++i) {
                     if (typeof object.joints[i] !== "object")
                         throw TypeError(".normvla.Frame.joints: object expected");
-                    message.joints[i] = $root.normvla.Joint.fromObject(object.joints[i]);
+                    message.joints[i] = $root.normvla.Joint.fromObject(object.joints[i], long + 1);
                 }
             }
             if (object.images) {
@@ -19636,7 +20344,7 @@ export const normvla = $root.normvla = (() => {
                 for (let i = 0; i < object.images.length; ++i) {
                     if (typeof object.images[i] !== "object")
                         throw TypeError(".normvla.Frame.images: object expected");
-                    message.images[i] = $root.normvla.Image.fromObject(object.images[i]);
+                    message.images[i] = $root.normvla.Image.fromObject(object.images[i], long + 1);
                 }
             }
             return message;
@@ -19750,7 +20458,7 @@ export const normvla = $root.normvla = (() => {
         function Joint(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -19895,9 +20603,13 @@ export const normvla = $root.normvla = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        Joint.decode = function decode(reader, length, error) {
+        Joint.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.normvla.Joint();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -19941,7 +20653,7 @@ export const normvla = $root.normvla = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -19972,9 +20684,13 @@ export const normvla = $root.normvla = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        Joint.verify = function verify(message) {
+        Joint.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.rangeMin != null && message.hasOwnProperty("rangeMin"))
                 if (!$util.isInteger(message.rangeMin))
                     return "rangeMin: integer expected";
@@ -20013,9 +20729,13 @@ export const normvla = $root.normvla = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {normvla.Joint} Joint
          */
-        Joint.fromObject = function fromObject(object) {
+        Joint.fromObject = function fromObject(object, long) {
             if (object instanceof $root.normvla.Joint)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.normvla.Joint();
             if (object.rangeMin != null)
                 message.rangeMin = object.rangeMin >>> 0;
@@ -20147,7 +20867,7 @@ export const normvla = $root.normvla = (() => {
         function Image(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -20222,9 +20942,13 @@ export const normvla = $root.normvla = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        Image.decode = function decode(reader, length, error) {
+        Image.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.normvla.Image();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -20240,7 +20964,7 @@ export const normvla = $root.normvla = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -20271,9 +20995,13 @@ export const normvla = $root.normvla = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        Image.verify = function verify(message) {
+        Image.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.jpeg != null && message.hasOwnProperty("jpeg"))
                 if (!(message.jpeg && typeof message.jpeg.length === "number" || $util.isString(message.jpeg)))
                     return "jpeg: buffer expected";
@@ -20291,9 +21019,13 @@ export const normvla = $root.normvla = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {normvla.Image} Image
          */
-        Image.fromObject = function fromObject(object) {
+        Image.fromObject = function fromObject(object, long) {
             if (object instanceof $root.normvla.Image)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.normvla.Image();
             if (object.jpeg != null)
                 if (typeof object.jpeg === "string")
@@ -20413,7 +21145,7 @@ export const normfs = $root.normfs = (() => {
         function ClientRequest(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -20508,9 +21240,13 @@ export const normfs = $root.normfs = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        ClientRequest.decode = function decode(reader, length, error) {
+        ClientRequest.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.normfs.ClientRequest();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -20518,23 +21254,23 @@ export const normfs = $root.normfs = (() => {
                     break;
                 switch (tag >>> 3) {
                 case 1: {
-                        message.setup = $root.normfs.SetupRequest.decode(reader, reader.uint32());
+                        message.setup = $root.normfs.SetupRequest.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 2: {
-                        message.ping = $root.normfs.PingRequest.decode(reader, reader.uint32());
+                        message.ping = $root.normfs.PingRequest.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 10: {
-                        message.write = $root.normfs.WriteRequest.decode(reader, reader.uint32());
+                        message.write = $root.normfs.WriteRequest.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 11: {
-                        message.read = $root.normfs.ReadRequest.decode(reader, reader.uint32());
+                        message.read = $root.normfs.ReadRequest.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -20565,26 +21301,30 @@ export const normfs = $root.normfs = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        ClientRequest.verify = function verify(message) {
+        ClientRequest.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.setup != null && message.hasOwnProperty("setup")) {
-                let error = $root.normfs.SetupRequest.verify(message.setup);
+                let error = $root.normfs.SetupRequest.verify(message.setup, long + 1);
                 if (error)
                     return "setup." + error;
             }
             if (message.ping != null && message.hasOwnProperty("ping")) {
-                let error = $root.normfs.PingRequest.verify(message.ping);
+                let error = $root.normfs.PingRequest.verify(message.ping, long + 1);
                 if (error)
                     return "ping." + error;
             }
             if (message.write != null && message.hasOwnProperty("write")) {
-                let error = $root.normfs.WriteRequest.verify(message.write);
+                let error = $root.normfs.WriteRequest.verify(message.write, long + 1);
                 if (error)
                     return "write." + error;
             }
             if (message.read != null && message.hasOwnProperty("read")) {
-                let error = $root.normfs.ReadRequest.verify(message.read);
+                let error = $root.normfs.ReadRequest.verify(message.read, long + 1);
                 if (error)
                     return "read." + error;
             }
@@ -20599,29 +21339,33 @@ export const normfs = $root.normfs = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {normfs.ClientRequest} ClientRequest
          */
-        ClientRequest.fromObject = function fromObject(object) {
+        ClientRequest.fromObject = function fromObject(object, long) {
             if (object instanceof $root.normfs.ClientRequest)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.normfs.ClientRequest();
             if (object.setup != null) {
                 if (typeof object.setup !== "object")
                     throw TypeError(".normfs.ClientRequest.setup: object expected");
-                message.setup = $root.normfs.SetupRequest.fromObject(object.setup);
+                message.setup = $root.normfs.SetupRequest.fromObject(object.setup, long + 1);
             }
             if (object.ping != null) {
                 if (typeof object.ping !== "object")
                     throw TypeError(".normfs.ClientRequest.ping: object expected");
-                message.ping = $root.normfs.PingRequest.fromObject(object.ping);
+                message.ping = $root.normfs.PingRequest.fromObject(object.ping, long + 1);
             }
             if (object.write != null) {
                 if (typeof object.write !== "object")
                     throw TypeError(".normfs.ClientRequest.write: object expected");
-                message.write = $root.normfs.WriteRequest.fromObject(object.write);
+                message.write = $root.normfs.WriteRequest.fromObject(object.write, long + 1);
             }
             if (object.read != null) {
                 if (typeof object.read !== "object")
                     throw TypeError(".normfs.ClientRequest.read: object expected");
-                message.read = $root.normfs.ReadRequest.fromObject(object.read);
+                message.read = $root.normfs.ReadRequest.fromObject(object.read, long + 1);
             }
             return message;
         };
@@ -20708,7 +21452,7 @@ export const normfs = $root.normfs = (() => {
         function ServerResponse(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -20803,9 +21547,13 @@ export const normfs = $root.normfs = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        ServerResponse.decode = function decode(reader, length, error) {
+        ServerResponse.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.normfs.ServerResponse();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -20813,23 +21561,23 @@ export const normfs = $root.normfs = (() => {
                     break;
                 switch (tag >>> 3) {
                 case 1: {
-                        message.setup = $root.normfs.SetupResponse.decode(reader, reader.uint32());
+                        message.setup = $root.normfs.SetupResponse.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 2: {
-                        message.ping = $root.normfs.PingResponse.decode(reader, reader.uint32());
+                        message.ping = $root.normfs.PingResponse.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 10: {
-                        message.write = $root.normfs.WriteResponse.decode(reader, reader.uint32());
+                        message.write = $root.normfs.WriteResponse.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 11: {
-                        message.read = $root.normfs.ReadResponse.decode(reader, reader.uint32());
+                        message.read = $root.normfs.ReadResponse.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -20860,26 +21608,30 @@ export const normfs = $root.normfs = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        ServerResponse.verify = function verify(message) {
+        ServerResponse.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.setup != null && message.hasOwnProperty("setup")) {
-                let error = $root.normfs.SetupResponse.verify(message.setup);
+                let error = $root.normfs.SetupResponse.verify(message.setup, long + 1);
                 if (error)
                     return "setup." + error;
             }
             if (message.ping != null && message.hasOwnProperty("ping")) {
-                let error = $root.normfs.PingResponse.verify(message.ping);
+                let error = $root.normfs.PingResponse.verify(message.ping, long + 1);
                 if (error)
                     return "ping." + error;
             }
             if (message.write != null && message.hasOwnProperty("write")) {
-                let error = $root.normfs.WriteResponse.verify(message.write);
+                let error = $root.normfs.WriteResponse.verify(message.write, long + 1);
                 if (error)
                     return "write." + error;
             }
             if (message.read != null && message.hasOwnProperty("read")) {
-                let error = $root.normfs.ReadResponse.verify(message.read);
+                let error = $root.normfs.ReadResponse.verify(message.read, long + 1);
                 if (error)
                     return "read." + error;
             }
@@ -20894,29 +21646,33 @@ export const normfs = $root.normfs = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {normfs.ServerResponse} ServerResponse
          */
-        ServerResponse.fromObject = function fromObject(object) {
+        ServerResponse.fromObject = function fromObject(object, long) {
             if (object instanceof $root.normfs.ServerResponse)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.normfs.ServerResponse();
             if (object.setup != null) {
                 if (typeof object.setup !== "object")
                     throw TypeError(".normfs.ServerResponse.setup: object expected");
-                message.setup = $root.normfs.SetupResponse.fromObject(object.setup);
+                message.setup = $root.normfs.SetupResponse.fromObject(object.setup, long + 1);
             }
             if (object.ping != null) {
                 if (typeof object.ping !== "object")
                     throw TypeError(".normfs.ServerResponse.ping: object expected");
-                message.ping = $root.normfs.PingResponse.fromObject(object.ping);
+                message.ping = $root.normfs.PingResponse.fromObject(object.ping, long + 1);
             }
             if (object.write != null) {
                 if (typeof object.write !== "object")
                     throw TypeError(".normfs.ServerResponse.write: object expected");
-                message.write = $root.normfs.WriteResponse.fromObject(object.write);
+                message.write = $root.normfs.WriteResponse.fromObject(object.write, long + 1);
             }
             if (object.read != null) {
                 if (typeof object.read !== "object")
                     throw TypeError(".normfs.ServerResponse.read: object expected");
-                message.read = $root.normfs.ReadResponse.fromObject(object.read);
+                message.read = $root.normfs.ReadResponse.fromObject(object.read, long + 1);
             }
             return message;
         };
@@ -21000,7 +21756,7 @@ export const normfs = $root.normfs = (() => {
         function Id(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -21065,9 +21821,13 @@ export const normfs = $root.normfs = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        Id.decode = function decode(reader, length, error) {
+        Id.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.normfs.Id();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -21079,7 +21839,7 @@ export const normfs = $root.normfs = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -21110,9 +21870,13 @@ export const normfs = $root.normfs = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        Id.verify = function verify(message) {
+        Id.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.raw != null && message.hasOwnProperty("raw"))
                 if (!(message.raw && typeof message.raw.length === "number" || $util.isString(message.raw)))
                     return "raw: buffer expected";
@@ -21127,9 +21891,13 @@ export const normfs = $root.normfs = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {normfs.Id} Id
          */
-        Id.fromObject = function fromObject(object) {
+        Id.fromObject = function fromObject(object, long) {
             if (object instanceof $root.normfs.Id)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.normfs.Id();
             if (object.raw != null)
                 if (typeof object.raw === "string")
@@ -21229,7 +21997,7 @@ export const normfs = $root.normfs = (() => {
         function Offset(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -21304,9 +22072,13 @@ export const normfs = $root.normfs = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        Offset.decode = function decode(reader, length, error) {
+        Offset.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.normfs.Offset();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -21314,7 +22086,7 @@ export const normfs = $root.normfs = (() => {
                     break;
                 switch (tag >>> 3) {
                 case 1: {
-                        message.id = $root.normfs.Id.decode(reader, reader.uint32());
+                        message.id = $root.normfs.Id.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 2: {
@@ -21322,7 +22094,7 @@ export const normfs = $root.normfs = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -21353,11 +22125,15 @@ export const normfs = $root.normfs = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        Offset.verify = function verify(message) {
+        Offset.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.id != null && message.hasOwnProperty("id")) {
-                let error = $root.normfs.Id.verify(message.id);
+                let error = $root.normfs.Id.verify(message.id, long + 1);
                 if (error)
                     return "id." + error;
             }
@@ -21380,14 +22156,18 @@ export const normfs = $root.normfs = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {normfs.Offset} Offset
          */
-        Offset.fromObject = function fromObject(object) {
+        Offset.fromObject = function fromObject(object, long) {
             if (object instanceof $root.normfs.Offset)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.normfs.Offset();
             if (object.id != null) {
                 if (typeof object.id !== "object")
                     throw TypeError(".normfs.Offset.id: object expected");
-                message.id = $root.normfs.Id.fromObject(object.id);
+                message.id = $root.normfs.Id.fromObject(object.id, long + 1);
             }
             switch (object.type) {
             default:
@@ -21481,7 +22261,7 @@ export const normfs = $root.normfs = (() => {
         function SetupRequest(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -21546,9 +22326,13 @@ export const normfs = $root.normfs = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        SetupRequest.decode = function decode(reader, length, error) {
+        SetupRequest.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.normfs.SetupRequest();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -21560,7 +22344,7 @@ export const normfs = $root.normfs = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -21591,9 +22375,13 @@ export const normfs = $root.normfs = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        SetupRequest.verify = function verify(message) {
+        SetupRequest.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.version != null && message.hasOwnProperty("version"))
                 if (!$util.isInteger(message.version) && !(message.version && $util.isInteger(message.version.low) && $util.isInteger(message.version.high)))
                     return "version: integer|Long expected";
@@ -21608,9 +22396,13 @@ export const normfs = $root.normfs = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {normfs.SetupRequest} SetupRequest
          */
-        SetupRequest.fromObject = function fromObject(object) {
+        SetupRequest.fromObject = function fromObject(object, long) {
             if (object instanceof $root.normfs.SetupRequest)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.normfs.SetupRequest();
             if (object.version != null)
                 if ($util.Long)
@@ -21702,7 +22494,7 @@ export const normfs = $root.normfs = (() => {
         function SetupResponse(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -21787,9 +22579,13 @@ export const normfs = $root.normfs = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        SetupResponse.decode = function decode(reader, length, error) {
+        SetupResponse.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.normfs.SetupResponse();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -21809,7 +22605,7 @@ export const normfs = $root.normfs = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -21840,9 +22636,13 @@ export const normfs = $root.normfs = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        SetupResponse.verify = function verify(message) {
+        SetupResponse.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.version != null && message.hasOwnProperty("version"))
                 if (!$util.isInteger(message.version) && !(message.version && $util.isInteger(message.version.low) && $util.isInteger(message.version.high)))
                     return "version: integer|Long expected";
@@ -21863,9 +22663,13 @@ export const normfs = $root.normfs = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {normfs.SetupResponse} SetupResponse
          */
-        SetupResponse.fromObject = function fromObject(object) {
+        SetupResponse.fromObject = function fromObject(object, long) {
             if (object instanceof $root.normfs.SetupResponse)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.normfs.SetupResponse();
             if (object.version != null)
                 if ($util.Long)
@@ -21976,7 +22780,7 @@ export const normfs = $root.normfs = (() => {
         function PingRequest(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -22051,9 +22855,13 @@ export const normfs = $root.normfs = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        PingRequest.decode = function decode(reader, length, error) {
+        PingRequest.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.normfs.PingRequest();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -22069,7 +22877,7 @@ export const normfs = $root.normfs = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -22100,9 +22908,13 @@ export const normfs = $root.normfs = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        PingRequest.verify = function verify(message) {
+        PingRequest.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.sequence != null && message.hasOwnProperty("sequence"))
                 if (!$util.isInteger(message.sequence) && !(message.sequence && $util.isInteger(message.sequence.low) && $util.isInteger(message.sequence.high)))
                     return "sequence: integer|Long expected";
@@ -22120,9 +22932,13 @@ export const normfs = $root.normfs = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {normfs.PingRequest} PingRequest
          */
-        PingRequest.fromObject = function fromObject(object) {
+        PingRequest.fromObject = function fromObject(object, long) {
             if (object instanceof $root.normfs.PingRequest)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.normfs.PingRequest();
             if (object.sequence != null)
                 if ($util.Long)
@@ -22234,7 +23050,7 @@ export const normfs = $root.normfs = (() => {
         function PingResponse(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -22319,9 +23135,13 @@ export const normfs = $root.normfs = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        PingResponse.decode = function decode(reader, length, error) {
+        PingResponse.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.normfs.PingResponse();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -22337,11 +23157,11 @@ export const normfs = $root.normfs = (() => {
                         break;
                     }
                 case 4: {
-                        message.request = $root.normfs.PingRequest.decode(reader, reader.uint32());
+                        message.request = $root.normfs.PingRequest.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -22372,9 +23192,13 @@ export const normfs = $root.normfs = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        PingResponse.verify = function verify(message) {
+        PingResponse.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
                 if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
                     return "localStampNs: integer|Long expected";
@@ -22382,7 +23206,7 @@ export const normfs = $root.normfs = (() => {
                 if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
                     return "monotonicStampNs: integer|Long expected";
             if (message.request != null && message.hasOwnProperty("request")) {
-                let error = $root.normfs.PingRequest.verify(message.request);
+                let error = $root.normfs.PingRequest.verify(message.request, long + 1);
                 if (error)
                     return "request." + error;
             }
@@ -22397,9 +23221,13 @@ export const normfs = $root.normfs = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {normfs.PingResponse} PingResponse
          */
-        PingResponse.fromObject = function fromObject(object) {
+        PingResponse.fromObject = function fromObject(object, long) {
             if (object instanceof $root.normfs.PingResponse)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.normfs.PingResponse();
             if (object.localStampNs != null)
                 if ($util.Long)
@@ -22422,7 +23250,7 @@ export const normfs = $root.normfs = (() => {
             if (object.request != null) {
                 if (typeof object.request !== "object")
                     throw TypeError(".normfs.PingResponse.request: object expected");
-                message.request = $root.normfs.PingRequest.fromObject(object.request);
+                message.request = $root.normfs.PingRequest.fromObject(object.request, long + 1);
             }
             return message;
         };
@@ -22520,7 +23348,7 @@ export const normfs = $root.normfs = (() => {
             this.packets = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -22606,9 +23434,13 @@ export const normfs = $root.normfs = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        WriteRequest.decode = function decode(reader, length, error) {
+        WriteRequest.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.normfs.WriteRequest();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -22630,7 +23462,7 @@ export const normfs = $root.normfs = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -22661,9 +23493,13 @@ export const normfs = $root.normfs = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        WriteRequest.verify = function verify(message) {
+        WriteRequest.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.writeId != null && message.hasOwnProperty("writeId"))
                 if (!$util.isInteger(message.writeId) && !(message.writeId && $util.isInteger(message.writeId.low) && $util.isInteger(message.writeId.high)))
                     return "writeId: integer|Long expected";
@@ -22688,9 +23524,13 @@ export const normfs = $root.normfs = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {normfs.WriteRequest} WriteRequest
          */
-        WriteRequest.fromObject = function fromObject(object) {
+        WriteRequest.fromObject = function fromObject(object, long) {
             if (object instanceof $root.normfs.WriteRequest)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.normfs.WriteRequest();
             if (object.writeId != null)
                 if ($util.Long)
@@ -22806,7 +23646,7 @@ export const normfs = $root.normfs = (() => {
             this.ids = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -22892,9 +23732,13 @@ export const normfs = $root.normfs = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        WriteResponse.decode = function decode(reader, length, error) {
+        WriteResponse.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.normfs.WriteResponse();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -22912,11 +23756,11 @@ export const normfs = $root.normfs = (() => {
                 case 10: {
                         if (!(message.ids && message.ids.length))
                             message.ids = [];
-                        message.ids.push($root.normfs.Id.decode(reader, reader.uint32()));
+                        message.ids.push($root.normfs.Id.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -22947,9 +23791,13 @@ export const normfs = $root.normfs = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        WriteResponse.verify = function verify(message) {
+        WriteResponse.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.writeId != null && message.hasOwnProperty("writeId"))
                 if (!$util.isInteger(message.writeId) && !(message.writeId && $util.isInteger(message.writeId.low) && $util.isInteger(message.writeId.high)))
                     return "writeId: integer|Long expected";
@@ -22965,7 +23813,7 @@ export const normfs = $root.normfs = (() => {
                 if (!Array.isArray(message.ids))
                     return "ids: array expected";
                 for (let i = 0; i < message.ids.length; ++i) {
-                    let error = $root.normfs.Id.verify(message.ids[i]);
+                    let error = $root.normfs.Id.verify(message.ids[i], long + 1);
                     if (error)
                         return "ids." + error;
                 }
@@ -22981,9 +23829,13 @@ export const normfs = $root.normfs = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {normfs.WriteResponse} WriteResponse
          */
-        WriteResponse.fromObject = function fromObject(object) {
+        WriteResponse.fromObject = function fromObject(object, long) {
             if (object instanceof $root.normfs.WriteResponse)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.normfs.WriteResponse();
             if (object.writeId != null)
                 if ($util.Long)
@@ -23017,7 +23869,7 @@ export const normfs = $root.normfs = (() => {
                 for (let i = 0; i < object.ids.length; ++i) {
                     if (typeof object.ids[i] !== "object")
                         throw TypeError(".normfs.WriteResponse.ids: object expected");
-                    message.ids[i] = $root.normfs.Id.fromObject(object.ids[i]);
+                    message.ids[i] = $root.normfs.Id.fromObject(object.ids[i], long + 1);
                 }
             }
             return message;
@@ -23128,7 +23980,7 @@ export const normfs = $root.normfs = (() => {
         function ReadRequest(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -23233,9 +24085,13 @@ export const normfs = $root.normfs = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        ReadRequest.decode = function decode(reader, length, error) {
+        ReadRequest.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.normfs.ReadRequest();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -23255,7 +24111,7 @@ export const normfs = $root.normfs = (() => {
                         break;
                     }
                 case 10: {
-                        message.offset = $root.normfs.Offset.decode(reader, reader.uint32());
+                        message.offset = $root.normfs.Offset.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 11: {
@@ -23263,7 +24119,7 @@ export const normfs = $root.normfs = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -23294,9 +24150,13 @@ export const normfs = $root.normfs = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        ReadRequest.verify = function verify(message) {
+        ReadRequest.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.readId != null && message.hasOwnProperty("readId"))
                 if (!$util.isInteger(message.readId) && !(message.readId && $util.isInteger(message.readId.low) && $util.isInteger(message.readId.high)))
                     return "readId: integer|Long expected";
@@ -23307,7 +24167,7 @@ export const normfs = $root.normfs = (() => {
                 if (!$util.isInteger(message.step) && !(message.step && $util.isInteger(message.step.low) && $util.isInteger(message.step.high)))
                     return "step: integer|Long expected";
             if (message.offset != null && message.hasOwnProperty("offset")) {
-                let error = $root.normfs.Offset.verify(message.offset);
+                let error = $root.normfs.Offset.verify(message.offset, long + 1);
                 if (error)
                     return "offset." + error;
             }
@@ -23325,9 +24185,13 @@ export const normfs = $root.normfs = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {normfs.ReadRequest} ReadRequest
          */
-        ReadRequest.fromObject = function fromObject(object) {
+        ReadRequest.fromObject = function fromObject(object, long) {
             if (object instanceof $root.normfs.ReadRequest)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.normfs.ReadRequest();
             if (object.readId != null)
                 if ($util.Long)
@@ -23352,7 +24216,7 @@ export const normfs = $root.normfs = (() => {
             if (object.offset != null) {
                 if (typeof object.offset !== "object")
                     throw TypeError(".normfs.ReadRequest.offset: object expected");
-                message.offset = $root.normfs.Offset.fromObject(object.offset);
+                message.offset = $root.normfs.Offset.fromObject(object.offset, long + 1);
             }
             if (object.limit != null)
                 if ($util.Long)
@@ -23473,7 +24337,7 @@ export const normfs = $root.normfs = (() => {
         function ReadResponse(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -23578,9 +24442,13 @@ export const normfs = $root.normfs = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        ReadResponse.decode = function decode(reader, length, error) {
+        ReadResponse.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.normfs.ReadResponse();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -23596,7 +24464,7 @@ export const normfs = $root.normfs = (() => {
                         break;
                     }
                 case 10: {
-                        message.id = $root.normfs.Id.decode(reader, reader.uint32());
+                        message.id = $root.normfs.Id.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 11: {
@@ -23608,7 +24476,7 @@ export const normfs = $root.normfs = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -23639,9 +24507,13 @@ export const normfs = $root.normfs = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        ReadResponse.verify = function verify(message) {
+        ReadResponse.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.readId != null && message.hasOwnProperty("readId"))
                 if (!$util.isInteger(message.readId) && !(message.readId && $util.isInteger(message.readId.low) && $util.isInteger(message.readId.high)))
                     return "readId: integer|Long expected";
@@ -23658,7 +24530,7 @@ export const normfs = $root.normfs = (() => {
                     break;
                 }
             if (message.id != null && message.hasOwnProperty("id")) {
-                let error = $root.normfs.Id.verify(message.id);
+                let error = $root.normfs.Id.verify(message.id, long + 1);
                 if (error)
                     return "id." + error;
             }
@@ -23687,9 +24559,13 @@ export const normfs = $root.normfs = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {normfs.ReadResponse} ReadResponse
          */
-        ReadResponse.fromObject = function fromObject(object) {
+        ReadResponse.fromObject = function fromObject(object, long) {
             if (object instanceof $root.normfs.ReadResponse)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.normfs.ReadResponse();
             if (object.readId != null)
                 if ($util.Long)
@@ -23735,7 +24611,7 @@ export const normfs = $root.normfs = (() => {
             if (object.id != null) {
                 if (typeof object.id !== "object")
                     throw TypeError(".normfs.ReadResponse.id: object expected");
-                message.id = $root.normfs.Id.fromObject(object.id);
+                message.id = $root.normfs.Id.fromObject(object.id, long + 1);
             }
             if (object.data != null)
                 if (typeof object.data === "string")
