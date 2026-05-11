@@ -1,37 +1,31 @@
-
 import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { useTheme } from '@/hooks/useTheme';
-import { getMotorPosition } from './motor-parser';
+import { getMotorPosition } from '../motor-parser';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import URDFLoader from 'urdf-loader';
-import { st3215 } from '../api/proto';
 import {
   mat4FromRotationTranslation,
   parseUrdf,
   rpyToMatrix
-} from './utils';
+} from '../utils';
 import { appendHash } from '@/utils/asset-hashes';
 import { getRendererThemeColors } from '@/utils/theme-colors';
-
-interface BaseRobotRendererProps {
-  busSerialNumber: string | null | undefined;
-  bus: st3215.InferenceState.IBusState;
-  isLeader?: boolean;
-  urdfPath: string;
-  jointNames?: (string | string[])[];
-  basePos?: [number, number, number];
-  baseRpy?: [number, number, number];
-  robotType: 'so101' | 'elrobot';
-}
-
-export interface BaseRobotRendererRef {
-  toggleRangeSpheres: () => void;
-}
+import type { BaseRobotRendererProps, BaseRobotRendererRef } from './types';
 
 const BaseRobotRenderer = forwardRef<BaseRobotRendererRef, BaseRobotRendererProps>((props, ref) => {
-  const { busSerialNumber, bus, isLeader, urdfPath, jointNames, basePos = [0,0,0], baseRpy = [0,0,0], robotType } = props;
+  const {
+    busSerialNumber,
+    bus,
+    isLeader,
+    urdfPath,
+    jointNames,
+    basePos = [0,0,0],
+    baseRpy = [0,0,0],
+    resolveMotorMaterialIndex,
+    resolveJointValue,
+  } = props;
   const { theme } = useTheme();
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<any>(null);
@@ -157,7 +151,14 @@ const BaseRobotRenderer = forwardRef<BaseRobotRendererRef, BaseRobotRendererProp
               });
 
         if (!sceneRef.current) return;
-        sceneRef.current.arm = new Arm(busSerialNumber || "default", robot, bus.motors?.length || 0, jointNames, robotType);
+        sceneRef.current.arm = new Arm(
+          busSerialNumber || "default",
+          robot,
+          bus.motors?.length || 0,
+          jointNames,
+          resolveMotorMaterialIndex,
+          resolveJointValue,
+        );
         
         // Apply initial motor positions if available
         if (bus?.motors && bus.motors.length > 0) {
@@ -392,16 +393,25 @@ class Arm {
   color: number;
   motorCount: number;
   jointNames?: (string | string[])[];
-  robotType: 'so101' | 'elrobot';
+  resolveMotorMaterialIndex?: BaseRobotRendererProps['resolveMotorMaterialIndex'];
+  resolveJointValue?: BaseRobotRendererProps['resolveJointValue'];
 
   static colorPalette = [0xFF7043, 0x4CAF50, 0x42A5F5, 0xFFD54F, 0xAB47BC, 0x26C6DA, 0xFFA726, 0x66BB6A, 0xD98484, 0x90A4AE];
 
-  constructor(id: string, robot: any, motorCount: number, jointNames: (string | string[])[] | undefined, robotType: 'so101' | 'elrobot') {
+  constructor(
+    id: string,
+    robot: any,
+    motorCount: number,
+    jointNames: (string | string[])[] | undefined,
+    resolveMotorMaterialIndex: BaseRobotRendererProps['resolveMotorMaterialIndex'],
+    resolveJointValue: BaseRobotRendererProps['resolveJointValue'],
+  ) {
     this.id = id;
     this.robot = robot;
     this.motorCount = motorCount;
     this.jointNames = jointNames;
-    this.robotType = robotType;
+    this.resolveMotorMaterialIndex = resolveMotorMaterialIndex;
+    this.resolveJointValue = resolveJointValue;
     this.motors = [];
     for (let i = 0; i < this.motorCount; i++) {
       const jointNameOrNames = this.jointNames ? this.jointNames[i] : (i + 1).toString();
@@ -484,13 +494,15 @@ class Arm {
         jointNameOrNames.forEach(name => {
           if (this.robot.joints[name]) {
             const limit = this.robot.joints[name].limit;
-            let position = limit.lower + motor.position * (limit.upper - limit.lower);
-            if (name.endsWith('_1')) {
-              this.robot.joints[name].setJointValue(position);
-            } else {
-              position = limit.upper - position;
-              this.robot.joints[name].setJointValue(position);
-            }
+            const position = this.resolveJointValue
+              ? this.resolveJointValue({
+                jointName: name,
+                position: motor.position,
+                lowerLimit: limit.lower,
+                upperLimit: limit.upper,
+              })
+              : limit.lower + motor.position * (limit.upper - limit.lower);
+            this.robot.joints[name].setJointValue(position);
           }
         });
       } else {
@@ -508,22 +520,13 @@ class Arm {
 
             let color = this.color;
             const materialName = material.name;
+            if (this.resolveMotorMaterialIndex) {
+              const motorIndex = this.resolveMotorMaterialIndex({
+                materialName,
+                motorCount: this.motorCount,
+              });
 
-            if (this.robotType === 'so101') {
-              const motorMap: { [key: string]: number } = {};
-              for (let i = 0; i < this.motorCount; i++) {
-                motorMap[`sts3215_03a_v1_${i + 1}_material`] = i;
-              }
-
-              if (materialName && materialName.includes('sts3215')) {
-                const motorIndex = motorMap[materialName];
-                if (motorIndex !== undefined && motorIndex >= 0 && motorIndex < this.motorCount) {
-                  color = this.motors[motorIndex].status === 'ok' ? 0x000000 : 0xFF0000;
-                }
-              }
-            } else if (this.robotType === 'elrobot') {
-              const motorIndex = parseInt(materialName.split('_')[1]) - 1;
-              if (motorIndex >= 0 && motorIndex < this.motorCount) {
+              if (motorIndex !== null && motorIndex >= 0 && motorIndex < this.motorCount) {
                 color = this.motors[motorIndex].status === 'ok' ? 0x000000 : 0xFF0000;
               }
             }

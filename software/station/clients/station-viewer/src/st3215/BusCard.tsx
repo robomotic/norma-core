@@ -3,6 +3,7 @@ import Long from 'long';
 import { Camera } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { commandManager } from '@/api/commands';
+import { supportsSt3215Device } from '@/devices/registry';
 import { FrameEntry } from '@/api/frame-parser';
 import { useElementFullscreen } from '@/hooks/useElementFullscreen';
 import { motors_mirroring, st3215, usbvideo } from '@/api/proto.js';
@@ -386,7 +387,7 @@ const BusCard: React.FC<BusCardProps> = ({
         (motor.rangeMax ?? 0) - (motor.rangeMin ?? 0) < MIN_CALIBRATED_RANGE,
     );
   const needsCalibration = hasMotors && (hasUnfrozenMotor || hasNarrowRange);
-  const canRender3d = [6, 8].includes(bus.motors?.length || 0);
+  const canRender3d = supportsSt3215Device(bus);
   const canShowCamera = activeVideoSources.length > 0;
 
   useEffect(() => {
@@ -619,8 +620,8 @@ const BusCard: React.FC<BusCardProps> = ({
                   <>No motors connected to this bus.</>
                 ) : (
                   <>
-                    3D model visualization is only available for 6 or 8-motor
-                    configurations.
+                    3D model visualization is only available for registered
+                    device modules.
                     <br />
                     This bus has {bus.motors?.length} motor
                     {bus.motors?.length === 1 ? "" : "s"}.

@@ -1,10 +1,9 @@
 import { forwardRef, useImperativeHandle, useRef } from 'react';
-import { st3215 } from '../api/proto';
-import SO101Renderer from './SO101Renderer';
-import ElRobotRenderer from './ElRobotRenderer';
-import { BaseRobotRendererRef } from './BaseRobotRenderer';
-import MotorDataTable from './MotorDataTable';
 import { Link } from 'react-router-dom';
+import { st3215 } from '../api/proto';
+import RobotRendererHost from './robot-rendering/RobotRendererHost';
+import type { BaseRobotRendererRef } from './robot-rendering/types';
+import MotorDataTable from './MotorDataTable';
 import CameraViewer from '../usbvideo/CameraViewer';
 
 interface BusWebGLRendererProps {
@@ -37,11 +36,7 @@ const BusWebGLRendererComponent = forwardRef<BusWebGLRendererRef, BusWebGLRender
 
   return (
     <div className="relative w-full h-full">
-        {
-            (bus.motors?.length || 0) >= 8 ? 
-            <ElRobotRenderer {...props} ref={childRef} /> : 
-            <SO101Renderer {...props} ref={childRef} />
-        }
+      <RobotRendererHost {...props} ref={childRef} />
       <div className="absolute inset-0 w-full h-full z-20 pointer-events-none">
         {showMotorData &&
           <div className="pointer-events-auto">
