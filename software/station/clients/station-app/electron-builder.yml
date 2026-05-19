@@ -1,5 +1,7 @@
 appId: dev.normacore.station-app
 productName: NormaCore Station
+electronLanguages:
+  - en
 directories:
   output: release
 files:
@@ -25,7 +27,9 @@ linux:
     entry:
       Name: NormaCore Station
       Comment: Physical Operations Platform
-      StartupWMClass: normacore-station
+      StartupWMClass: "NormaCore Station"
+      Type: Application
+      Categories: Development;
   target:
     - AppImage
     - deb

@@ -70,7 +70,7 @@ Backend defaults to `ws://127.0.0.1:8889/api` and NormFS TCP to `127.0.0.1:8888`
 
 ## Stack
 
-- Electron 40
+- Electron 41
 - TypeScript 5.9
 - electron-builder
 - Rust station backend

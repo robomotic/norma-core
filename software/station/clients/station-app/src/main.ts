@@ -307,7 +307,7 @@ function createWindow(): void {
 
   if (!fs.existsSync(viewerDist)) {
     console.error(`station-viewer dist not found at: ${viewerDist}`);
-    win.loadURL('data:text/html,<h1>station-viewer/dist not found</h1><p>Run yarn build:viewer before loading production mode.</p>');
+    win.loadURL('data:text/html,<h1>station-viewer/dist not found</h1><p>Run npm run build:viewer before loading production mode.</p>');
     return;
   }
 
