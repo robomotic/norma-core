@@ -6,6 +6,20 @@ Arduino Portenta X8.
 The build flow intentionally uses the upstream NXP i.MX `repo` manifest first,
 then adds the Arduino, Tailscale, and NormaCore layers on top.
 
+## Contents 📚
+
+- [Image Profile](#image-profile-)
+- [Max Carrier Setup](#max-carrier-setup-)
+- [Start Here](#start-here-)
+- [1. Fetch The NXP Base BSP](#1-fetch-the-nxp-base-bsp-)
+- [2. Add Arduino, Tailscale, And NormaCore](#2-add-arduino-tailscale-and-normacore-)
+- [3. Create The Build Directory](#3-create-the-build-directory-)
+- [4. Add Local Access Credentials](#4-add-local-access-credentials-)
+- [5. Build The Image](#5-build-the-image-)
+- [6. Prepare Files For UUU Flashing](#6-prepare-files-for-uuu-flashing-)
+- [7. Flash Explicitly](#7-flash-explicitly-)
+- [Debugging Serial Console](#debugging-serial-console-)
+
 ## Image Profile 🧭
 
 `x8-normacore` is a production-oriented, small headless Linux image for Arduino
@@ -45,42 +59,6 @@ Ethernet, set the Max Carrier Ethernet DIP switches to the Portenta X8 mode:
 Arduino documents this as Ethernet enabled for Portenta X8. See the
 [Portenta Max Carrier user manual](https://docs.arduino.cc/tutorials/portenta-max-carrier/user-manual/)
 for the carrier DIP switch table.
-
-## Debugging Serial Console 🧪
-
-Use the Max Carrier debug serial console to watch boot logs and get a local
-console.
-
-- Connect power to the Portenta Max Carrier.
-- Connect a Mini USB cable from the host computer to the Max Carrier debug USB
-  port.
-
-Find the serial device:
-
-**Host:**
-
-```bash
-ls -l /dev/serial/by-id/
-```
-
-If several devices are present, resolve them to the underlying `tty` devices:
-
-**Host:**
-
-```bash
-readlink -f /dev/serial/by-id/*
-```
-
-Start the serial console:
-
-**Host:**
-
-```bash
-sudo picocom -b 115200 /dev/serial/by-id/usb-SEGGER_J-Link_001079296581-if00
-```
-
-The exact `/dev/serial/by-id/...` path can differ between boards and hosts.
-Exit `picocom` with `Ctrl-A`, then `Ctrl-X`.
 
 ## Start Here 📍
 
@@ -351,3 +329,39 @@ After UUU finishes:
 - Set `BOOT` back to `OFF`.
 - Leave the Ethernet DIP switches `1` and `2` as `OFF` for Portenta X8 mode.
 - Reconnect normal power, LAN, and peripherals.
+
+## Debugging Serial Console 🧪
+
+Use the Max Carrier debug serial console to watch boot logs and get a local
+console.
+
+- Connect power to the Portenta Max Carrier.
+- Connect a Mini USB cable from the host computer to the Max Carrier debug USB
+  port.
+
+Find the serial device:
+
+**Host:**
+
+```bash
+ls -l /dev/serial/by-id/
+```
+
+If several devices are present, resolve them to the underlying `tty` devices:
+
+**Host:**
+
+```bash
+readlink -f /dev/serial/by-id/*
+```
+
+Start the serial console:
+
+**Host:**
+
+```bash
+sudo picocom -b 115200 /dev/serial/by-id/usb-SEGGER_J-Link_001079296581-if00
+```
+
+The exact `/dev/serial/by-id/...` path can differ between boards and hosts.
+Exit `picocom` with `Ctrl-A`, then `Ctrl-X`.
