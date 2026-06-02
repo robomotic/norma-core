@@ -46,6 +46,42 @@ Arduino documents this as Ethernet enabled for Portenta X8. See the
 [Portenta Max Carrier user manual](https://docs.arduino.cc/tutorials/portenta-max-carrier/user-manual/)
 for the carrier DIP switch table.
 
+## Debugging Serial Console 🧪
+
+Use the Max Carrier debug serial console to watch boot logs and get a local
+console.
+
+- Connect power to the Portenta Max Carrier.
+- Connect a Mini USB cable from the host computer to the Max Carrier debug USB
+  port.
+
+Find the serial device:
+
+**Host:**
+
+```bash
+ls -l /dev/serial/by-id/
+```
+
+If several devices are present, resolve them to the underlying `tty` devices:
+
+**Host:**
+
+```bash
+readlink -f /dev/serial/by-id/*
+```
+
+Start the serial console:
+
+**Host:**
+
+```bash
+sudo picocom -b 115200 /dev/serial/by-id/usb-SEGGER_J-Link_001079296581-if00
+```
+
+The exact `/dev/serial/by-id/...` path can differ between boards and hosts.
+Exit `picocom` with `Ctrl-A`, then `Ctrl-X`.
+
 ## Start Here 📍
 
 Yocto is not installed as a single package here. The workspace is fetched with
