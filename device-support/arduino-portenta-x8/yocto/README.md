@@ -318,6 +318,16 @@ sudo ./mfgtool-files-portenta-x8/uuu \
   x8-clean-hw-image-portenta-x8.wic
 ```
 
+If `uuu` fails with `libbz2.so.1.0: cannot open shared object file`, the host
+may provide the same library as `libbz2.so.1`. On Fedora-like hosts, run the
+flash command with a temporary compatibility link:
+
+**Host, from `flash-x8`:**
+
+```bash
+d="$(mktemp -d)" && ln -s /lib64/libbz2.so.1 "$d/libbz2.so.1.0" && sudo env LD_LIBRARY_PATH="$d" ./mfgtool-files-portenta-x8/uuu -b emmc_all imx-boot-x8-clean.bin x8-clean-hw-image-portenta-x8.wic
+```
+
 Do not run Arduino's `full_image.uuu` script for this image. That script expects
 Arduino/LMP image filenames; the command above uses the bundled UUU binary with
 the NormaCore image artifacts.
