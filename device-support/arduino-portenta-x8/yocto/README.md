@@ -35,6 +35,17 @@ The target image intentionally does not include:
 The Docker container in this README is only the build environment. It is not
 installed into the Portenta X8 image.
 
+## Max Carrier Setup 🔌
+
+This image targets Portenta X8 on the Portenta Max Carrier. Before relying on
+Ethernet, set the Max Carrier Ethernet DIP switches to the Portenta X8 mode:
+
+- Ethernet DIP switches `1` and `2`: `OFF`
+
+Arduino documents this as Ethernet enabled for Portenta X8. See the
+[Portenta Max Carrier user manual](https://docs.arduino.cc/tutorials/portenta-max-carrier/user-manual/)
+for the carrier DIP switch table.
+
 ## Start Here 📍
 
 Yocto is not installed as a single package here. The workspace is fetched with
@@ -92,6 +103,9 @@ official NXP i.MX manifest:
 
 ```bash
 cd /workdir/target/yocto-portenta-x8
+
+git config --global user.email "you@example.com"
+git config --global user.name "Your Name"
 
 repo init \
   -u https://github.com/nxp-imx/imx-manifest.git \
@@ -262,6 +276,16 @@ Flashing is intentionally manual. Use Arduino's Portenta X8 image bundle only
 for the bundled UUU tool and manufacturing files; keep flashing the NormaCore
 `.wic` and matching Yocto/NXP bootloader prepared above.
 
+Before running UUU, put the Portenta X8 into flashing mode:
+
+- Power off the board and disconnect external power, LAN, and peripherals.
+- On the Portenta Max Carrier, set `BOOT SEL` to `ON`.
+- On the Portenta Max Carrier, set `BOOT` to `ON`.
+- Connect only a USB-C cable from the host computer to the Portenta X8.
+
+Arduino documents this sequence in the
+[Portenta X8 image flashing guide](https://docs.arduino.cc/tutorials/portenta-x8/image-flashing/).
+
 **Host, after exiting Docker:**
 
 ```bash
@@ -283,3 +307,11 @@ sudo ./mfgtool-files-portenta-x8/uuu \
 Do not run Arduino's `full_image.uuu` script for this image. That script expects
 Arduino/LMP image filenames; the command above uses the bundled UUU binary with
 the NormaCore image artifacts.
+
+After UUU finishes:
+
+- Disconnect the USB-C cable to power off the board.
+- Set `BOOT SEL` back to `OFF`.
+- Set `BOOT` back to `OFF`.
+- Leave the Ethernet DIP switches `1` and `2` as `OFF` for Portenta X8 mode.
+- Reconnect normal power, LAN, and peripherals.
