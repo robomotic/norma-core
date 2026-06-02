@@ -8,18 +8,18 @@ Physical operations platform for robotics - real-time data collection, inference
 
 Download pre-built binaries from the [releases page](https://github.com/norma-core/norma-core/releases/tag/v0.1.0-beta.8):
 
-- **macOS ARM64** (Apple Silicon): `NormaCore Station.dmg` - Desktop app with bundled station binary
-- **macOS ARM64** (Apple Silicon): `station-macos-arm64.zip` - Command-line binary
+- **macOS ARM64** (Apple Silicon): `station-macos-arm64.dmg` - Desktop app with bundled station binary
+- **macOS ARM64** (Apple Silicon): `station-macos-arm64.zip` - Command-line binaries archive
 - **Linux ARM64** (Raspberry Pi): `station-linux-aarch64.tar.gz`
 - **Linux AMD64** (Intel/AMD): `station-linux-x86_64.tar.gz`
 
 **macOS Desktop App:**
 ```bash
-# Install DMG or extract ZIP and drag to Applications
+# Install station-macos-arm64.dmg or extract ZIP and drag to Applications
 # Station binary runs automatically in the background
 ```
 
-**Command-line Binary:**
+**Command-line Binaries:**
 ```bash
 # Linux
 tar -xzf station-linux-*.tar.gz
