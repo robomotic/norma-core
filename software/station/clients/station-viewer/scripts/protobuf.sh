@@ -14,6 +14,7 @@ npm exec -- pbjs --wrap es6 --force-long -t static-module --es6 -l eslint-disabl
   ${SRC}/drivers/st3215/st3215.proto \
   ${SRC}/drivers/usbvideo/usbvideo.proto \
   ${SRC}/drivers/motors-mirroring/mirroring.proto \
+  ${SRC}/drivers/yahboom-dogzilla-lite/yahboom_dogzilla_lite.proto \
   ${SRC}/drivers/sysinfo/sysinfo.proto \
   ${SRC}/drivers/inferences/normvla.proto \
   ${SRC}/normfs/normfs.proto \
