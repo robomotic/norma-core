@@ -1,0 +1,266 @@
+syntax = "proto3";
+
+package st3215;
+
+enum ST3215SignalType {
+    ST3215_SIGNAL_TYPE_UNSPECIFIED = 0;
+    ST3215_BUS_CONNECT             = 1;
+    ST3215_BUS_DISCONNECT          = 2;
+    ST3215_DRIVE_CONNECT           = 3;
+    ST3215_DRIVE_DISCONNECT        = 4;
+    ST3215_DRIVE_STATE             = 6;
+    ST3215_COMMAND                 = 7;
+    ST3215_COMMAND_SUCCESS         = 8;
+    ST3215_ERROR                   = 9;
+    ST3215_COMMAND_REJECTED        = 11;
+    ST3215_COMMAND_FAILED          = 12;
+}
+
+message RxEnvelope {
+    uint64 monotonic_stamp_ns = 1;
+    uint64 local_stamp_ns     = 2;
+    uint64 app_start_id       = 3;
+
+    ST3215SignalType signal_type = 10;
+    ST3215Bus        bus         = 11;
+    uint32           motor_id    = 12;
+
+    bytes                 data      = 20;
+
+    TxEnvelope command = 30;
+
+    ST3215Error error = 50;
+}
+
+message TxEnvelope {
+    uint64 monotonic_stamp_ns = 1;
+    uint64 local_stamp_ns     = 2;
+    uint64 app_start_id       = 5;
+
+    string target_bus_serial = 3;
+
+    bytes command_id = 4;
+
+    ST3215WriteCommand       write                 = 10;
+    ST3215RegWriteCommand    reg_write             = 11;
+    ST3215ActionCommand      action                = 12;
+    ST3215ResetCommand       reset                 = 13;
+    ResetCalibrationCommand  reset_calibration     = 14;
+    FreezeCalibrationCommand freeze_calibration    = 15;
+    ST3215SyncWriteCommand   sync_write            = 16;
+    AutoCalibrateCommand     auto_calibrate        = 17;
+    StopAutoCalibrateCommand stop_auto_calibrate   = 18;
+}
+
+message MetaEnvelope {
+    uint64 monotonic_stamp_ns = 1;
+    uint64 local_stamp_ns     = 2;
+    uint64 app_start_id       = 3;
+
+    MetaEnvelopeType type         = 4;
+    bytes            rx_uintn_ptr = 5;
+    string           bus_serial   = 6;
+
+    repeated MotorArc arcs = 10;
+}
+
+enum CommandResult {
+    CR_PROCESSING = 0;
+    CR_SUCCESS  = 1;
+    CR_REJECTED = 2;
+    CR_FAILED   = 3;
+}
+
+message InferenceCommandState {
+  TxEnvelope    command = 1;
+  CommandResult result  = 2;
+}
+
+message AutoCalibrationState {
+    enum Status {
+        IDLE        = 0;
+        IN_PROGRESS = 1;
+        DONE        = 2;
+        FAILED      = 3;
+        STOPPED     = 4;
+    }
+
+    Status status        = 1;
+    uint32 current_step  = 2;
+    uint32 total_steps   = 3;
+    string current_phase = 4;
+    string error_message = 5;
+}
+
+message InferenceState {
+    message MotorState {
+        uint32      id         = 1;
+        bytes       rx_pointer = 2;
+
+        uint64 monotonic_stamp_ns = 3;
+        uint64 system_stamp_ns    = 4;
+        uint64 app_start_id       = 7;
+
+        bytes       state = 5;
+        ST3215Error error = 6;
+
+        uint32 range_min     = 10;
+        uint32 range_max     = 11;
+        bool   range_freezed = 14;
+
+        InferenceCommandState last_command = 12;
+    }
+
+    message BusState {
+        ST3215Bus bus    = 1;
+
+        uint64    monotonic_stamp_ns = 2;
+        uint64    system_stamp_ns    = 3;
+        uint64    app_start_id       = 4;
+
+        repeated MotorState motors = 10;
+
+        AutoCalibrationState auto_calibration = 20;
+    }
+
+    bytes last_inference_queue_ptr = 1;
+
+    repeated BusState buses = 10;
+}
+
+message Command {
+    string target_bus_serial = 1;
+
+    ST3215WriteCommand       write                 = 10;
+    ST3215RegWriteCommand    reg_write             = 11;
+    ST3215ActionCommand      action                = 12;
+    ST3215ResetCommand       reset                 = 13;
+    ResetCalibrationCommand  reset_calibration     = 14;
+    FreezeCalibrationCommand freeze_calibration    = 15;
+    ST3215SyncWriteCommand   sync_write            = 16;
+    AutoCalibrateCommand     auto_calibrate        = 17;
+    StopAutoCalibrateCommand stop_auto_calibrate   = 18;
+}
+
+// -- structs
+
+message ResetCalibrationCommand {
+    bool reset = 1;
+}
+
+message FreezeCalibrationCommand {
+    bool freeze = 1;
+    repeated FreezeMotorArc arcs = 2;
+}
+
+message FreezeMotorArc {
+    uint32 motor_id  = 1;
+    uint32 min_angle = 2;
+    uint32 max_angle = 3;
+    uint32 midpoint  = 4;
+}
+
+message AutoCalibrateCommand {
+    bool calibrate = 1;
+}
+
+message StopAutoCalibrateCommand {
+    bool stop = 1;
+}
+
+message ST3215Bus {
+    string port_name      = 1;
+    uint32 vid            = 2;
+    uint32 pid            = 3;
+    string serial_number  = 4;
+    string manufacturer   = 5;
+    string product        = 6;
+    uint32 port_baud_rate = 7;
+}
+
+message ST3215SignalData {
+    string                port_name    = 1;
+    uint32                motor_id     = 2;
+    ST3215SignalType      type         = 3;
+    
+    uint32                baud_rate = 4;
+    bytes                 data      = 5;
+}
+
+message ST3215WriteCommand {
+    uint32 motor_id  = 1;
+    uint32 address   = 2;
+    bytes  value     = 3;
+}
+
+message ST3215RegWriteCommand {
+    uint32 motor_id  = 1;
+    uint32 address   = 2;
+    bytes  value     = 3;
+}
+
+message ST3215ActionCommand {
+    uint32 motor_id  = 1;
+}
+
+message ST3215SyncWriteCommand {
+    message MotorWrite {
+        uint32 motor_id = 1;
+        bytes  value    = 2;
+    }
+
+    uint32 address = 1;
+    repeated MotorWrite motors = 2;
+}
+
+message ST3215ResetCommand {
+    string port_name = 1;
+    uint32 motor_id  = 2;
+}
+
+enum MetaEnvelopeType {
+    MET_UNKNOWN = 0;
+    
+    MET_RESET_CALIBRATION  = 1;
+    MET_FREEZE_CALIBRATION = 2;
+}
+
+message MotorArc {
+    uint32 motor_id  = 2;
+    uint32 min_angle = 3;
+    uint32 max_angle = 4;
+    bool range_freezed = 5;
+
+    repeated uint32 positions = 10;
+}
+
+message ST3215Error {
+    enum ServoErrorType {
+        SET_INSTRUCTION = 0;
+        SET_OVERLOAD    = 1;
+        SET_CHECKSUM    = 2;
+        SET_RANGE       = 3;
+        SET_OVERHEAT    = 4;
+        SET_ANGLE_LIMIT = 5;
+        SET_VOLTAGE     = 6;
+    }
+
+    enum ST3215ErrorKind {
+        SEK_IO               = 0;
+        SEK_INVALID_HEADER   = 1;
+        SEK_INVALID_CHECKSUM = 2;
+        SEK_SERVO_ERROR      = 3;
+        SEK_MOTOR_ID_ERROR   = 4;
+        SEK_INVALID_DATA     = 5;
+        SEK_TIMEOUT          = 6;
+    }
+
+    ST3215ErrorKind kind = 1;
+
+    bytes command_packet  = 2;
+    bytes response_packet = 3;
+    
+    string description = 5;
+
+    repeated ServoErrorType servo = 10;
+}
