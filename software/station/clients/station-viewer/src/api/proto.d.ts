@@ -246,6 +246,7 @@ export namespace drivers {
         QDT_INFERENCE_FRAMES = 22,
         QDT_MOTOR_MIRRORING_MODES = 30,
         QDT_MOTOR_MIRRORING_RX = 32,
+        QDT_MOTOR_MIRRORING_GRAVITY_COMP_MODES = 33,
         QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX = 40,
         QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX = 41,
         QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE = 42
@@ -256,7 +257,8 @@ export namespace drivers {
         STC_ST3215_COMMAND = 0,
         STC_MOTOR_MIRRORING_COMMAND = 1,
         STC_INFERENCE_TAG_COMMAND = 2,
-        STC_YAHBOOM_DOGZILLA_LITE_COMMAND = 3
+        STC_YAHBOOM_DOGZILLA_LITE_COMMAND = 3,
+        STC_GRAVITY_COMP_COMMAND = 4
     }
 }
 
@@ -5049,6 +5051,9 @@ export namespace motors_mirroring {
 
         /** RxEnvelope command */
         command?: (motors_mirroring.ICommand|null);
+
+        /** RxEnvelope gravityCommand */
+        gravityCommand?: (motors_mirroring.IGravityCompCommand|null);
     }
 
     /** Represents a RxEnvelope. */
@@ -5074,6 +5079,9 @@ export namespace motors_mirroring {
 
         /** RxEnvelope command. */
         public command?: (motors_mirroring.ICommand|null);
+
+        /** RxEnvelope gravityCommand. */
+        public gravityCommand?: (motors_mirroring.IGravityCompCommand|null);
 
         /**
          * Creates a new RxEnvelope instance using the specified properties.
@@ -5161,6 +5169,9 @@ export namespace motors_mirroring {
 
         /** InferenceState mirroring */
         mirroring?: (motors_mirroring.InferenceState.IMirroring[]|null);
+
+        /** InferenceState gravityComp */
+        gravityComp?: (motors_mirroring.IGravityCompBusState[]|null);
     }
 
     /** Represents an InferenceState. */
@@ -5177,6 +5188,9 @@ export namespace motors_mirroring {
 
         /** InferenceState mirroring. */
         public mirroring: motors_mirroring.InferenceState.IMirroring[];
+
+        /** InferenceState gravityComp. */
+        public gravityComp: motors_mirroring.IGravityCompBusState[];
 
         /**
          * Creates a new InferenceState instance using the specified properties.
@@ -5463,6 +5477,346 @@ export namespace motors_mirroring {
              */
             public static getTypeUrl(typeUrlPrefix?: string): string;
         }
+    }
+
+    /** GravityCompState enum. */
+    enum GravityCompState {
+        GC_UNKNOWN = 0,
+        GC_DISABLED = 1,
+        GC_ENABLED = 2
+    }
+
+    /** Properties of a GravityCompModeEnvelope. */
+    interface IGravityCompModeEnvelope {
+
+        /** GravityCompModeEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** GravityCompModeEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** GravityCompModeEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** GravityCompModeEnvelope bus */
+        bus?: (motors_mirroring.IMirroringBus|null);
+
+        /** GravityCompModeEnvelope state */
+        state?: (motors_mirroring.GravityCompState|null);
+    }
+
+    /** Represents a GravityCompModeEnvelope. */
+    class GravityCompModeEnvelope implements IGravityCompModeEnvelope {
+
+        /**
+         * Constructs a new GravityCompModeEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: motors_mirroring.IGravityCompModeEnvelope);
+
+        /** GravityCompModeEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** GravityCompModeEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** GravityCompModeEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** GravityCompModeEnvelope bus. */
+        public bus?: (motors_mirroring.IMirroringBus|null);
+
+        /** GravityCompModeEnvelope state. */
+        public state: motors_mirroring.GravityCompState;
+
+        /**
+         * Creates a new GravityCompModeEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns GravityCompModeEnvelope instance
+         */
+        public static create(properties?: motors_mirroring.IGravityCompModeEnvelope): motors_mirroring.GravityCompModeEnvelope;
+
+        /**
+         * Encodes the specified GravityCompModeEnvelope message. Does not implicitly {@link motors_mirroring.GravityCompModeEnvelope.verify|verify} messages.
+         * @param message GravityCompModeEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: motors_mirroring.IGravityCompModeEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified GravityCompModeEnvelope message, length delimited. Does not implicitly {@link motors_mirroring.GravityCompModeEnvelope.verify|verify} messages.
+         * @param message GravityCompModeEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: motors_mirroring.IGravityCompModeEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a GravityCompModeEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns GravityCompModeEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): motors_mirroring.GravityCompModeEnvelope;
+
+        /**
+         * Decodes a GravityCompModeEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns GravityCompModeEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): motors_mirroring.GravityCompModeEnvelope;
+
+        /**
+         * Verifies a GravityCompModeEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a GravityCompModeEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns GravityCompModeEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): motors_mirroring.GravityCompModeEnvelope;
+
+        /**
+         * Creates a plain object from a GravityCompModeEnvelope message. Also converts values to other types if specified.
+         * @param message GravityCompModeEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: motors_mirroring.GravityCompModeEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this GravityCompModeEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for GravityCompModeEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** GravityCompCommandType enum. */
+    enum GravityCompCommandType {
+        GCT_START_GRAVITY_COMP = 0,
+        GCT_STOP_GRAVITY_COMP = 1
+    }
+
+    /** Properties of a GravityCompCommand. */
+    interface IGravityCompCommand {
+
+        /** GravityCompCommand type */
+        type?: (motors_mirroring.GravityCompCommandType|null);
+
+        /** GravityCompCommand bus */
+        bus?: (motors_mirroring.IMirroringBus|null);
+    }
+
+    /** Represents a GravityCompCommand. */
+    class GravityCompCommand implements IGravityCompCommand {
+
+        /**
+         * Constructs a new GravityCompCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: motors_mirroring.IGravityCompCommand);
+
+        /** GravityCompCommand type. */
+        public type: motors_mirroring.GravityCompCommandType;
+
+        /** GravityCompCommand bus. */
+        public bus?: (motors_mirroring.IMirroringBus|null);
+
+        /**
+         * Creates a new GravityCompCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns GravityCompCommand instance
+         */
+        public static create(properties?: motors_mirroring.IGravityCompCommand): motors_mirroring.GravityCompCommand;
+
+        /**
+         * Encodes the specified GravityCompCommand message. Does not implicitly {@link motors_mirroring.GravityCompCommand.verify|verify} messages.
+         * @param message GravityCompCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: motors_mirroring.IGravityCompCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified GravityCompCommand message, length delimited. Does not implicitly {@link motors_mirroring.GravityCompCommand.verify|verify} messages.
+         * @param message GravityCompCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: motors_mirroring.IGravityCompCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a GravityCompCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns GravityCompCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): motors_mirroring.GravityCompCommand;
+
+        /**
+         * Decodes a GravityCompCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns GravityCompCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): motors_mirroring.GravityCompCommand;
+
+        /**
+         * Verifies a GravityCompCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a GravityCompCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns GravityCompCommand
+         */
+        public static fromObject(object: { [k: string]: any }): motors_mirroring.GravityCompCommand;
+
+        /**
+         * Creates a plain object from a GravityCompCommand message. Also converts values to other types if specified.
+         * @param message GravityCompCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: motors_mirroring.GravityCompCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this GravityCompCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for GravityCompCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a GravityCompBusState. */
+    interface IGravityCompBusState {
+
+        /** GravityCompBusState id */
+        id?: (motors_mirroring.IMirroringBus|null);
+
+        /** GravityCompBusState state */
+        state?: (motors_mirroring.GravityCompState|null);
+    }
+
+    /** Represents a GravityCompBusState. */
+    class GravityCompBusState implements IGravityCompBusState {
+
+        /**
+         * Constructs a new GravityCompBusState.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: motors_mirroring.IGravityCompBusState);
+
+        /** GravityCompBusState id. */
+        public id?: (motors_mirroring.IMirroringBus|null);
+
+        /** GravityCompBusState state. */
+        public state: motors_mirroring.GravityCompState;
+
+        /**
+         * Creates a new GravityCompBusState instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns GravityCompBusState instance
+         */
+        public static create(properties?: motors_mirroring.IGravityCompBusState): motors_mirroring.GravityCompBusState;
+
+        /**
+         * Encodes the specified GravityCompBusState message. Does not implicitly {@link motors_mirroring.GravityCompBusState.verify|verify} messages.
+         * @param message GravityCompBusState message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: motors_mirroring.IGravityCompBusState, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified GravityCompBusState message, length delimited. Does not implicitly {@link motors_mirroring.GravityCompBusState.verify|verify} messages.
+         * @param message GravityCompBusState message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: motors_mirroring.IGravityCompBusState, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a GravityCompBusState message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns GravityCompBusState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): motors_mirroring.GravityCompBusState;
+
+        /**
+         * Decodes a GravityCompBusState message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns GravityCompBusState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): motors_mirroring.GravityCompBusState;
+
+        /**
+         * Verifies a GravityCompBusState message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a GravityCompBusState message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns GravityCompBusState
+         */
+        public static fromObject(object: { [k: string]: any }): motors_mirroring.GravityCompBusState;
+
+        /**
+         * Creates a plain object from a GravityCompBusState message. Also converts values to other types if specified.
+         * @param message GravityCompBusState
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: motors_mirroring.GravityCompBusState, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this GravityCompBusState to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for GravityCompBusState
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
     }
 }
 

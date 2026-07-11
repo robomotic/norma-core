@@ -53,6 +53,8 @@ message RxEnvelope {
 
     InferenceState state   = 10;
     Command        command = 11;
+
+    GravityCompCommand gravity_command = 12;
 }
 
 message InferenceState {
@@ -69,4 +71,40 @@ message InferenceState {
 
     repeated Bus       modes     = 10;
     repeated Mirroring mirroring = 11;
+
+    repeated GravityCompBusState gravity_comp = 12;
+}
+
+// Gravity compensation is an orthogonal per-bus flag, independent of BusMode:
+// a bus can be BR_LEADER (mirroring source) and gravity-comp-enabled at the
+// same time, so this is modeled as its own enum/messages rather than a new
+// BusMode variant.
+enum GravityCompState {
+    GC_UNKNOWN  = 0;
+    GC_DISABLED = 1;
+    GC_ENABLED  = 2;
+}
+
+message GravityCompModeEnvelope {
+    uint64 monotonic_stamp_ns = 1;
+    uint64 local_stamp_ns     = 2;
+    uint64 app_start_id       = 3;
+
+    MirroringBus     bus   = 4;
+    GravityCompState state = 5;
+}
+
+enum GravityCompCommandType {
+    GCT_START_GRAVITY_COMP = 0;
+    GCT_STOP_GRAVITY_COMP  = 1;
+}
+
+message GravityCompCommand {
+    GravityCompCommandType type = 1;
+    MirroringBus            bus  = 2;
+}
+
+message GravityCompBusState {
+    MirroringBus     id    = 1;
+    GravityCompState state = 2;
 }

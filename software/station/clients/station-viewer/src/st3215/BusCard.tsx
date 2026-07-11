@@ -3,7 +3,7 @@ import Long from 'long';
 import { Camera } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { commandManager } from '@/api/commands';
-import { supportsSt3215Device } from '@/devices/registry';
+import { supportsGravityComp, supportsSt3215Device } from '@/devices/registry';
 import { FrameEntry } from '@/api/frame-parser';
 import { useElementFullscreen } from '@/hooks/useElementFullscreen';
 import { motors_mirroring, st3215, usbvideo } from '@/api/proto.js';
@@ -121,6 +121,14 @@ const BusCard: React.FC<BusCardProps> = ({
 
   const currentMirror = mirroringState?.mirroring?.find((m) =>
     m.targets?.some((t) => t.id?.uniqueId === busSerialNumber),
+  );
+
+  const gravityCompEntry = mirroringState?.gravityComp?.find(
+    (g) => g.id?.uniqueId === busSerialNumber,
+  );
+  const isGravityCompEnabled = gravityCompEntry?.state === motors_mirroring.GravityCompState.GC_ENABLED;
+  const isFollowerBus = mirroringState?.modes?.some(
+    (m) => m.id?.uniqueId === busSerialNumber && m.mode === motors_mirroring.BusMode.BR_FOLLOWER,
   );
 
   const setWebControlledState = useCallback((nextState: boolean) => {
@@ -346,6 +354,24 @@ const BusCard: React.FC<BusCardProps> = ({
     }
   }, [bus.motors, busSerialNumber, setWebControlledState]);
 
+  const handleGravityCompToggle = useCallback(async () => {
+    if (!busSerialNumber) {
+      return;
+    }
+
+    const target: motors_mirroring.IMirroringBus = {
+      type: motors_mirroring.BusType.MBT_ST3215,
+      uniqueId: busSerialNumber,
+    };
+
+    await commandManager.sendGravityCompCommand({
+      type: isGravityCompEnabled
+        ? motors_mirroring.GravityCompCommandType.GCT_STOP_GRAVITY_COMP
+        : motors_mirroring.GravityCompCommandType.GCT_START_GRAVITY_COMP,
+      bus: target,
+    });
+  }, [busSerialNumber, isGravityCompEnabled]);
+
   // Function to calculate moving average for latency (15 second window)
   const getMovingAverageLatency = (
     key: string,
@@ -455,6 +481,27 @@ const BusCard: React.FC<BusCardProps> = ({
               <Camera className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
+          {supportsGravityComp(bus) && (
+            <button
+              type="button"
+              onClick={handleGravityCompToggle}
+              disabled={!busSerialNumber || isFollowerBus}
+              className={`flex h-9 items-center justify-center rounded-md border px-3 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                isGravityCompEnabled
+                  ? "border-accent-success-deep bg-accent-success-bg text-text-primary"
+                  : "border-border-subtle bg-surface-primary text-text-muted hover:text-text-primary"
+              }`}
+              title={
+                isFollowerBus
+                  ? "Gravity compensation is only available on a self-controlled or leader arm"
+                  : isGravityCompEnabled
+                    ? "Disable gravity compensation"
+                    : "Enable gravity compensation"
+              }
+            >
+              Gravity Comp
+            </button>
+          )}
           <select
             value={
               isWebControlled
