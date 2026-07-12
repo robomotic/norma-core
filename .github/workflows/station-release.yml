@@ -81,8 +81,13 @@ jobs:
       - name: Install cargo-zigbuild
         run: cargo install cargo-zigbuild --locked
 
+      # amd64 is native to this runner - a plain `cargo build` avoids
+      # zigbuild's cross-compilation wrapper (zigcc), which confuses
+      # turbojpeg-sys's CMake bit-width detection when the "cross" target
+      # is actually the host architecture (CMake error: "ERROR-bit build").
+      # zigbuild is only needed for the genuinely cross-compiled arm64 build.
       - name: Build amd64
-        run: cargo zigbuild --release --package=station --target=x86_64-unknown-linux-gnu
+        run: cargo build --release --package=station --target=x86_64-unknown-linux-gnu
 
       - name: Build arm64
         run: cargo zigbuild --release --package=station --target=aarch64-unknown-linux-gnu
