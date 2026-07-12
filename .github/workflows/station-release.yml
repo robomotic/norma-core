@@ -70,15 +70,19 @@ jobs:
         with:
           targets: x86_64-unknown-linux-gnu,aarch64-unknown-linux-gnu
 
-      # 0.13.0 breaks turbojpeg-sys's CMake C-compiler-ABI detection when
-      # cross-compiling for aarch64 ("CMake Error ... math cannot parse the
-      # expression: ' * 8'" - CMAKE_SIZEOF_VOID_P comes back empty). 0.15.1
-      # (latest official release: https://github.com/ziglang/zig/releases)
-      # is confirmed working for this exact cross-compile.
+      # Installed directly rather than via mlugg/setup-zig@v1: that action
+      # still assumes zig's old tarball naming (zig-linux-x86_64-VERSION)
+      # and 404s on every release from 0.14.1 onward, which renamed to
+      # zig-x86_64-linux-VERSION. Also, zig 0.13.0 breaks turbojpeg-sys's
+      # CMake C-compiler-ABI detection when cross-compiling for aarch64
+      # ("CMake Error ... math cannot parse the expression: ' * 8'" -
+      # CMAKE_SIZEOF_VOID_P comes back empty) - 0.15.1 is confirmed working
+      # for this exact cross-compile.
       - name: Setup zig (for cargo-zigbuild cross-compilation)
-        uses: mlugg/setup-zig@v1
-        with:
-          version: 0.15.1
+        run: |
+          curl -sL https://ziglang.org/download/0.15.1/zig-x86_64-linux-0.15.1.tar.xz -o /tmp/zig.tar.xz
+          tar xf /tmp/zig.tar.xz -C /tmp
+          echo "/tmp/zig-x86_64-linux-0.15.1" >> "$GITHUB_PATH"
 
       - name: Install nasm (required by turbojpeg-sys)
         run: sudo apt-get update && sudo apt-get install -y nasm
