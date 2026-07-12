@@ -70,10 +70,14 @@ jobs:
         with:
           targets: x86_64-unknown-linux-gnu,aarch64-unknown-linux-gnu
 
+      # 0.13.0 breaks turbojpeg-sys's CMake C-compiler-ABI detection when
+      # cross-compiling for aarch64 ("CMake Error ... math cannot parse the
+      # expression: ' * 8'" - CMAKE_SIZEOF_VOID_P comes back empty). 0.15.2
+      # is confirmed working for this exact cross-compile.
       - name: Setup zig (for cargo-zigbuild cross-compilation)
         uses: mlugg/setup-zig@v1
         with:
-          version: 0.13.0
+          version: 0.15.2
 
       - name: Install nasm (required by turbojpeg-sys)
         run: sudo apt-get update && sudo apt-get install -y nasm
