@@ -16096,11 +16096,13 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
      * @enum {number}
      * @property {number} GCT_START_GRAVITY_COMP=0 GCT_START_GRAVITY_COMP value
      * @property {number} GCT_STOP_GRAVITY_COMP=1 GCT_STOP_GRAVITY_COMP value
+     * @property {number} GCT_SET_GAIN=2 GCT_SET_GAIN value
      */
     motors_mirroring.GravityCompCommandType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
         values[valuesById[0] = "GCT_START_GRAVITY_COMP"] = 0;
         values[valuesById[1] = "GCT_STOP_GRAVITY_COMP"] = 1;
+        values[valuesById[2] = "GCT_SET_GAIN"] = 2;
         return values;
     })();
 
@@ -16112,6 +16114,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
          * @interface IGravityCompCommand
          * @property {motors_mirroring.GravityCompCommandType|null} [type] GravityCompCommand type
          * @property {motors_mirroring.IMirroringBus|null} [bus] GravityCompCommand bus
+         * @property {number|null} [gainRadPerNm] GravityCompCommand gainRadPerNm
          */
 
         /**
@@ -16146,6 +16149,23 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
         GravityCompCommand.prototype.bus = null;
 
         /**
+         * GravityCompCommand gainRadPerNm.
+         * @member {number|null|undefined} gainRadPerNm
+         * @memberof motors_mirroring.GravityCompCommand
+         * @instance
+         */
+        GravityCompCommand.prototype.gainRadPerNm = null;
+
+        // OneOf field names bound to virtual getters and setters
+        let $oneOfFields;
+
+        // Virtual OneOf for proto3 optional field
+        Object.defineProperty(GravityCompCommand.prototype, "_gainRadPerNm", {
+            get: $util.oneOfGetter($oneOfFields = ["gainRadPerNm"]),
+            set: $util.oneOfSetter($oneOfFields)
+        });
+
+        /**
          * Creates a new GravityCompCommand instance using the specified properties.
          * @function create
          * @memberof motors_mirroring.GravityCompCommand
@@ -16173,6 +16193,8 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 writer.uint32(/* id 1, wireType 0 =*/8).int32(message.type);
             if (message.bus != null && Object.hasOwnProperty.call(message, "bus"))
                 $root.motors_mirroring.MirroringBus.encode(message.bus, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+            if (message.gainRadPerNm != null && Object.hasOwnProperty.call(message, "gainRadPerNm"))
+                writer.uint32(/* id 3, wireType 1 =*/25).double(message.gainRadPerNm);
             return writer;
         };
 
@@ -16221,6 +16243,10 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                         message.bus = $root.motors_mirroring.MirroringBus.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
+                case 3: {
+                        message.gainRadPerNm = reader.double();
+                        break;
+                    }
                 default:
                     reader.skipType(tag & 7, long);
                     break;
@@ -16260,18 +16286,25 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 long = 0;
             if (long > $util.recursionLimit)
                 return "maximum nesting depth exceeded";
+            let properties = {};
             if (message.type != null && message.hasOwnProperty("type"))
                 switch (message.type) {
                 default:
                     return "type: enum value expected";
                 case 0:
                 case 1:
+                case 2:
                     break;
                 }
             if (message.bus != null && message.hasOwnProperty("bus")) {
                 let error = $root.motors_mirroring.MirroringBus.verify(message.bus, long + 1);
                 if (error)
                     return "bus." + error;
+            }
+            if (message.gainRadPerNm != null && message.hasOwnProperty("gainRadPerNm")) {
+                properties._gainRadPerNm = 1;
+                if (typeof message.gainRadPerNm !== "number")
+                    return "gainRadPerNm: number expected";
             }
             return null;
         };
@@ -16307,12 +16340,18 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
             case 1:
                 message.type = 1;
                 break;
+            case "GCT_SET_GAIN":
+            case 2:
+                message.type = 2;
+                break;
             }
             if (object.bus != null) {
                 if (typeof object.bus !== "object")
                     throw TypeError(".motors_mirroring.GravityCompCommand.bus: object expected");
                 message.bus = $root.motors_mirroring.MirroringBus.fromObject(object.bus, long + 1);
             }
+            if (object.gainRadPerNm != null)
+                message.gainRadPerNm = Number(object.gainRadPerNm);
             return message;
         };
 
@@ -16337,6 +16376,11 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 object.type = options.enums === String ? $root.motors_mirroring.GravityCompCommandType[message.type] === undefined ? message.type : $root.motors_mirroring.GravityCompCommandType[message.type] : message.type;
             if (message.bus != null && message.hasOwnProperty("bus"))
                 object.bus = $root.motors_mirroring.MirroringBus.toObject(message.bus, options);
+            if (message.gainRadPerNm != null && message.hasOwnProperty("gainRadPerNm")) {
+                object.gainRadPerNm = options.json && !isFinite(message.gainRadPerNm) ? String(message.gainRadPerNm) : message.gainRadPerNm;
+                if (options.oneofs)
+                    object._gainRadPerNm = "gainRadPerNm";
+            }
             return object;
         };
 
@@ -16377,6 +16421,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
          * @interface IGravityCompBusState
          * @property {motors_mirroring.IMirroringBus|null} [id] GravityCompBusState id
          * @property {motors_mirroring.GravityCompState|null} [state] GravityCompBusState state
+         * @property {number|null} [gainRadPerNm] GravityCompBusState gainRadPerNm
          */
 
         /**
@@ -16411,6 +16456,23 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
         GravityCompBusState.prototype.state = 0;
 
         /**
+         * GravityCompBusState gainRadPerNm.
+         * @member {number|null|undefined} gainRadPerNm
+         * @memberof motors_mirroring.GravityCompBusState
+         * @instance
+         */
+        GravityCompBusState.prototype.gainRadPerNm = null;
+
+        // OneOf field names bound to virtual getters and setters
+        let $oneOfFields;
+
+        // Virtual OneOf for proto3 optional field
+        Object.defineProperty(GravityCompBusState.prototype, "_gainRadPerNm", {
+            get: $util.oneOfGetter($oneOfFields = ["gainRadPerNm"]),
+            set: $util.oneOfSetter($oneOfFields)
+        });
+
+        /**
          * Creates a new GravityCompBusState instance using the specified properties.
          * @function create
          * @memberof motors_mirroring.GravityCompBusState
@@ -16438,6 +16500,8 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 $root.motors_mirroring.MirroringBus.encode(message.id, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
             if (message.state != null && Object.hasOwnProperty.call(message, "state"))
                 writer.uint32(/* id 2, wireType 0 =*/16).int32(message.state);
+            if (message.gainRadPerNm != null && Object.hasOwnProperty.call(message, "gainRadPerNm"))
+                writer.uint32(/* id 3, wireType 1 =*/25).double(message.gainRadPerNm);
             return writer;
         };
 
@@ -16486,6 +16550,10 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                         message.state = reader.int32();
                         break;
                     }
+                case 3: {
+                        message.gainRadPerNm = reader.double();
+                        break;
+                    }
                 default:
                     reader.skipType(tag & 7, long);
                     break;
@@ -16525,6 +16593,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 long = 0;
             if (long > $util.recursionLimit)
                 return "maximum nesting depth exceeded";
+            let properties = {};
             if (message.id != null && message.hasOwnProperty("id")) {
                 let error = $root.motors_mirroring.MirroringBus.verify(message.id, long + 1);
                 if (error)
@@ -16539,6 +16608,11 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 case 2:
                     break;
                 }
+            if (message.gainRadPerNm != null && message.hasOwnProperty("gainRadPerNm")) {
+                properties._gainRadPerNm = 1;
+                if (typeof message.gainRadPerNm !== "number")
+                    return "gainRadPerNm: number expected";
+            }
             return null;
         };
 
@@ -16583,6 +16657,8 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 message.state = 2;
                 break;
             }
+            if (object.gainRadPerNm != null)
+                message.gainRadPerNm = Number(object.gainRadPerNm);
             return message;
         };
 
@@ -16607,6 +16683,11 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 object.id = $root.motors_mirroring.MirroringBus.toObject(message.id, options);
             if (message.state != null && message.hasOwnProperty("state"))
                 object.state = options.enums === String ? $root.motors_mirroring.GravityCompState[message.state] === undefined ? message.state : $root.motors_mirroring.GravityCompState[message.state] : message.state;
+            if (message.gainRadPerNm != null && message.hasOwnProperty("gainRadPerNm")) {
+                object.gainRadPerNm = options.json && !isFinite(message.gainRadPerNm) ? String(message.gainRadPerNm) : message.gainRadPerNm;
+                if (options.oneofs)
+                    object._gainRadPerNm = "gainRadPerNm";
+            }
             return object;
         };
 

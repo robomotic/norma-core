@@ -46,20 +46,34 @@ impl Inference {
     }
 
     /// Starts gravity compensation for `bus`. No-op if already running.
-    /// `on_self_stop` is called if the control loop terminates itself for
-    /// safety reasons (stale data or sustained overcurrent), so the caller
-    /// can keep displayed mode state truthful.
-    pub fn start_gravity_comp<F>(&self, bus: BusKey, on_self_stop: F)
+    /// `initial_gain`, if provided, overrides the configured default gain
+    /// for this run (still hard-clamped either way). `on_self_stop` is
+    /// called if the control loop terminates itself for safety reasons
+    /// (stale data or sustained overcurrent), so the caller can keep
+    /// displayed mode state truthful.
+    pub fn start_gravity_comp<F>(&self, bus: BusKey, initial_gain: Option<f64>, on_self_stop: F)
     where
         F: Fn(BusKey) + Send + Sync + 'static,
     {
-        self.gravity_comp.start(bus, self.config.clone(), Arc::clone(&self.normfs), on_self_stop);
+        self.gravity_comp.start(bus, self.config.clone(), initial_gain, Arc::clone(&self.normfs), on_self_stop);
     }
 
     /// Stops gravity compensation for `bus` (if running) and disables torque
     /// on its arm motors.
     pub fn stop_gravity_comp(&self, bus: BusKey) {
         self.gravity_comp.stop(&bus, &self.normfs);
+    }
+
+    /// Live-updates the gravity-comp gain for `bus` without restarting it.
+    /// Returns `false` if gravity comp isn't currently running on that bus.
+    pub fn set_gravity_comp_gain(&self, bus: &BusKey, gain: f64) -> bool {
+        self.gravity_comp.set_gain(bus, gain)
+    }
+
+    /// Returns the currently active gravity-comp gain for `bus`, or `None`
+    /// if it isn't running on that bus.
+    pub fn get_gravity_comp_gain(&self, bus: &BusKey) -> Option<f64> {
+        self.gravity_comp.get_gain(bus)
     }
 
     pub fn start(&self, from: BusKey, to: Vec<BusKey>) {

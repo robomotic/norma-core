@@ -110,12 +110,42 @@ would be unsafe. An explicit command is always required to (re-)enable it.
 
 ## Tuning
 
-`gain_rad_per_nm` (in `GravityCompConfig`, default `0.05`) cannot be derived
-from the ST3215's internal PID coefficients — those are undocumented
-firmware units. It must be tuned empirically on real hardware: start low,
-increase until the arm feels weightless without oscillating. Configurable
-via `gravity-comp:` under `drivers.st3215` in the station YAML config (see
-`software/station/shared/station-iface/src/config.rs::GravityCompConfig`).
+`gain_rad_per_nm` (in `GravityCompConfig`, default `0.05`, hard ceiling
+`GRAVITY_COMP_GAIN_CEILING = 1.0` in `../config.rs`) cannot be derived from
+the ST3215's internal PID coefficients — those are undocumented firmware
+units. It must be tuned empirically on real hardware: start low, increase
+until the arm feels weightless without oscillating.
+
+**Live, from the UI, without a restart** — this is the expected way to tune
+it day-to-day. The "Gravity Comp" button in `BusCard.tsx` has a gain input
+next to it. While gravity comp is running, changing that value sends a
+`GCT_SET_GAIN` command that updates the running control loop's gain
+in-place (`GravityComp::set_gain` → `Arc<RwLock<f64>>` read once per 20ms
+cycle in `run_control_loop`, not re-read from the static `MotorConfig`).
+Starting gravity comp also accepts an optional initial gain override on the
+`GCT_START_GRAVITY_COMP` command, so the UI's current input value is used
+immediately rather than always falling back to the config default. The
+active gain is broadcast back in `GravityCompBusState.gain_rad_per_nm` so
+the UI reflects reality (e.g. after a page reload) rather than only its own
+locally-remembered value.
+
+Since the default gain is quite conservative, a fresh install will likely
+feel like *nothing is happening* at first — this is expected, not a bug; see
+the worked example below.
+
+**Config-file default** (used only as the starting point before any live
+override): `gravity-comp:` under `drivers.st3215` in the station YAML config
+(see `software/station/shared/station-iface/src/config.rs::GravityCompConfig`).
+
+**Sanity-checking the numbers**: for a horizontal-reach pose
+(`theta = [0, 1.5, 0, 0, 0, 0, 0]`), `gravity_torques()` gives roughly
+0.55 Nm at the shoulder (joint 2), the largest of any joint. At the default
+gain (0.05 rad/Nm) that's only ~0.028 rad (~1.6°) of commanded offset —
+tens of ticks, well under `max_offset_ticks` (60) — combined with the
+servo's own low proportional gain (`ELROBOT_PID.p = 16`, chosen for
+backdrivability) this can be too weak to feel by hand. Try roughly
+0.2–0.4 rad/Nm as a more noticeable starting point, watch for oscillation,
+and back off if the arm hunts/vibrates rather than settling.
 
 ## Testing
 

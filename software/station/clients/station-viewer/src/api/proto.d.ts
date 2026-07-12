@@ -5610,7 +5610,8 @@ export namespace motors_mirroring {
     /** GravityCompCommandType enum. */
     enum GravityCompCommandType {
         GCT_START_GRAVITY_COMP = 0,
-        GCT_STOP_GRAVITY_COMP = 1
+        GCT_STOP_GRAVITY_COMP = 1,
+        GCT_SET_GAIN = 2
     }
 
     /** Properties of a GravityCompCommand. */
@@ -5621,6 +5622,9 @@ export namespace motors_mirroring {
 
         /** GravityCompCommand bus */
         bus?: (motors_mirroring.IMirroringBus|null);
+
+        /** GravityCompCommand gainRadPerNm */
+        gainRadPerNm?: (number|null);
     }
 
     /** Represents a GravityCompCommand. */
@@ -5637,6 +5641,9 @@ export namespace motors_mirroring {
 
         /** GravityCompCommand bus. */
         public bus?: (motors_mirroring.IMirroringBus|null);
+
+        /** GravityCompCommand gainRadPerNm. */
+        public gainRadPerNm?: (number|null);
 
         /**
          * Creates a new GravityCompCommand instance using the specified properties.
@@ -5724,6 +5731,9 @@ export namespace motors_mirroring {
 
         /** GravityCompBusState state */
         state?: (motors_mirroring.GravityCompState|null);
+
+        /** GravityCompBusState gainRadPerNm */
+        gainRadPerNm?: (number|null);
     }
 
     /** Represents a GravityCompBusState. */
@@ -5740,6 +5750,9 @@ export namespace motors_mirroring {
 
         /** GravityCompBusState state. */
         public state: motors_mirroring.GravityCompState;
+
+        /** GravityCompBusState gainRadPerNm. */
+        public gainRadPerNm?: (number|null);
 
         /**
          * Creates a new GravityCompBusState instance using the specified properties.
