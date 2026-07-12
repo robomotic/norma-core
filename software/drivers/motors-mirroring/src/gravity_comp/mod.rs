@@ -19,7 +19,7 @@ use bytes::Bytes;
 use normfs::NormFS;
 use parking_lot::RwLock;
 
-use crate::config::{MotorConfig, GRAVITY_COMP_REFRESH_INTERVAL};
+use crate::config::{clamp_gravity_comp_gain, MotorConfig, GRAVITY_COMP_REFRESH_INTERVAL};
 use crate::inference::model::StationState;
 use crate::inference::normalize;
 use crate::inference::{Inference, MAX_DATA_AGE_NS};
@@ -33,6 +33,11 @@ pub const ARM_MOTOR_IDS: [u8; JOINT_COUNT] = [1, 2, 3, 4, 5, 6, 7];
 
 struct GravityCompTask {
     stop_flag: Arc<AtomicBool>,
+    /// Live-adjustable gain, read by the control loop every cycle so it can
+    /// be tuned from the UI without restarting gravity comp or the station
+    /// process. Everything else in `GravityCompConfig` is fixed for the
+    /// lifetime of the task (only the gain was asked to be UI-tunable).
+    gain: Arc<RwLock<f64>>,
     handle: tokio::task::JoinHandle<()>,
 }
 
@@ -56,7 +61,11 @@ impl GravityComp {
     /// terminates itself for safety reasons (stale data or sustained
     /// overcurrent) - the caller uses this to keep displayed mode state
     /// truthful rather than silently drifting from what's actually running.
-    pub fn start<F>(&self, bus: BusKey, config: MotorConfig, normfs: Arc<NormFS>, on_self_stop: F)
+    /// `initial_gain`, if provided (e.g. from a UI-supplied start command),
+    /// overrides `config.gravity_comp.gain_rad_per_nm` as the starting point
+    /// - either way it's still hard-clamped and still adjustable afterwards
+    /// via `set_gain`.
+    pub fn start<F>(&self, bus: BusKey, config: MotorConfig, initial_gain: Option<f64>, normfs: Arc<NormFS>, on_self_stop: F)
     where
         F: Fn(BusKey) + Send + Sync + 'static,
     {
@@ -68,16 +77,21 @@ impl GravityComp {
         // torque, for the 7 arm motors only.
         Self::send_setup_commands(&normfs, &bus.bus_id, config.gravity_comp.torque_limit);
 
+        let gain = Arc::new(RwLock::new(clamp_gravity_comp_gain(
+            initial_gain.unwrap_or(config.gravity_comp.gain_rad_per_nm),
+        )));
+
         let stop_flag = Arc::new(AtomicBool::new(false));
         let loop_stop_flag = Arc::clone(&stop_flag);
+        let loop_gain = Arc::clone(&gain);
         let loop_bus = bus.clone();
         let loop_normfs = Arc::clone(&normfs);
 
         let handle = tokio::spawn(async move {
-            Self::run_control_loop(loop_bus, loop_stop_flag, loop_normfs, config, on_self_stop).await;
+            Self::run_control_loop(loop_bus, loop_stop_flag, loop_gain, loop_normfs, config, on_self_stop).await;
         });
 
-        self.tasks.write().insert(bus, GravityCompTask { stop_flag, handle });
+        self.tasks.write().insert(bus, GravityCompTask { stop_flag, gain, handle });
     }
 
     /// Stops the control loop for `bus` (if running), disables torque, and
@@ -88,6 +102,25 @@ impl GravityComp {
             task.handle.abort();
         }
         Self::send_teardown_commands(normfs, &bus.bus_id);
+    }
+
+    /// Live-updates the gain for a running gravity-comp task, without
+    /// restarting it. Returns `false` if `bus` has no running task.
+    pub fn set_gain(&self, bus: &BusKey, gain: f64) -> bool {
+        let tasks = self.tasks.read();
+        match tasks.get(bus) {
+            Some(task) => {
+                *task.gain.write() = clamp_gravity_comp_gain(gain);
+                true
+            }
+            None => false,
+        }
+    }
+
+    /// Returns the currently active gain for `bus`, or `None` if gravity
+    /// comp isn't running on it.
+    pub fn get_gain(&self, bus: &BusKey) -> Option<f64> {
+        self.tasks.read().get(bus).map(|task| *task.gain.read())
     }
 
     fn send_setup_commands(normfs: &Arc<NormFS>, bus_id: &str, torque_limit: u16) {
@@ -131,6 +164,7 @@ impl GravityComp {
     async fn run_control_loop<F>(
         bus: BusKey,
         stop_flag: Arc<AtomicBool>,
+        gain: Arc<RwLock<f64>>,
         normfs: Arc<NormFS>,
         config: MotorConfig,
         on_self_stop: F,
@@ -222,6 +256,7 @@ impl GravityComp {
             overcurrent_cycles = 0;
 
             let torques = elrobot_dynamics::gravity_torques(&theta);
+            let current_gain = *gain.read();
             let mut commands = Vec::new();
 
             for (i, &motor_id) in ARM_MOTOR_IDS.iter().enumerate() {
@@ -236,7 +271,7 @@ impl GravityComp {
                 let tpr = control::ticks_per_radian(motor.range_min, motor.range_max, lower, upper, &config);
                 let offset = control::gravity_torque_to_goal_offset_ticks(
                     torques[i],
-                    config.gravity_comp.gain_rad_per_nm,
+                    current_gain,
                     config.gravity_comp.max_offset_ticks,
                     tpr,
                 );

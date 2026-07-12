@@ -10,6 +10,18 @@ pub const GRAVITY_COMP_REFRESH_INTERVAL: Duration = Duration::from_millis(20);
 const GRAVITY_COMP_TORQUE_LIMIT_CEILING: u16 = 150;
 const GRAVITY_COMP_MAX_OFFSET_TICKS_CEILING: u16 = 200;
 
+/// Hard ceiling on `gain_rad_per_nm`, including when set live from the UI
+/// (see `gravity_comp::GravityComp::set_gain`) - independent of any
+/// config-file value.
+pub const GRAVITY_COMP_GAIN_CEILING: f64 = 1.0;
+
+pub fn clamp_gravity_comp_gain(gain: f64) -> f64 {
+    if !gain.is_finite() {
+        return 0.0;
+    }
+    gain.clamp(0.0, GRAVITY_COMP_GAIN_CEILING)
+}
+
 #[derive(Clone)]
 pub struct MotorConfig {
     pub safety_margin: u16,
@@ -50,6 +62,7 @@ impl GravityCompConfig {
     pub fn clamped(mut self) -> Self {
         self.torque_limit = self.torque_limit.min(GRAVITY_COMP_TORQUE_LIMIT_CEILING);
         self.max_offset_ticks = self.max_offset_ticks.min(GRAVITY_COMP_MAX_OFFSET_TICKS_CEILING);
+        self.gain_rad_per_nm = clamp_gravity_comp_gain(self.gain_rad_per_nm);
         self
     }
 }

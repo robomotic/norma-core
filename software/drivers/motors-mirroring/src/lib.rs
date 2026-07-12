@@ -255,12 +255,16 @@ fn merge_modes(
         let gravity_bus_states = gravity_current
             .clone()
             .into_iter()
-            .map(|(key, value)| mirroring::GravityCompBusState {
-                id: Some(mirroring::MirroringBus {
-                    unique_id: key.bus_id,
-                    r#type: key.bus_type as i32,
-                }),
-                state: value as i32,
+            .map(|(key, value)| {
+                let gain_rad_per_nm = inference.get_gravity_comp_gain(&key);
+                mirroring::GravityCompBusState {
+                    id: Some(mirroring::MirroringBus {
+                        unique_id: key.bus_id,
+                        r#type: key.bus_type as i32,
+                    }),
+                    state: value as i32,
+                    gain_rad_per_nm,
+                }
             })
             .collect();
 
@@ -326,6 +330,8 @@ fn merge_modes(
                         handle_stop_gravity_comp(command, modes, gravity_modes, inference, normfs, rx_queue_id);
                     } else if command.r#type == mirroring::GravityCompCommandType::GctStartGravityComp as i32 {
                         handle_start_gravity_comp(command, modes, gravity_modes, inference, normfs, rx_queue_id);
+                    } else if command.r#type == mirroring::GravityCompCommandType::GctSetGain as i32 {
+                        handle_set_gravity_comp_gain(command, modes, gravity_modes, inference, normfs, rx_queue_id);
                     }
                 }
                 _ => continue,
@@ -486,7 +492,8 @@ fn merge_modes(
             }
         };
 
-        log::info!("Starting gravity compensation for bus: {:?}", bus_key);
+        let initial_gain = command.gain_rad_per_nm;
+        log::info!("Starting gravity compensation for bus: {:?} (initial_gain={:?})", bus_key, initial_gain);
 
         let cb_modes = Arc::clone(modes);
         let cb_gravity_modes = Arc::clone(gravity_modes);
@@ -494,7 +501,7 @@ fn merge_modes(
         let cb_normfs = Arc::clone(normfs);
         let cb_rx_queue_id = rx_queue_id.clone();
 
-        inference.start_gravity_comp(bus_key.clone(), move |bus| {
+        inference.start_gravity_comp(bus_key.clone(), initial_gain, move |bus| {
             log::warn!("Gravity comp on bus {:?} self-stopped for safety; updating mode state", bus);
             deactivate_gravity_comp(bus, &cb_modes, &cb_gravity_modes, &cb_inference, &cb_normfs, &cb_rx_queue_id, None);
         });
@@ -525,6 +532,47 @@ fn merge_modes(
 
         log::info!("Stopping gravity compensation for bus: {:?}", bus_key);
         deactivate_gravity_comp(bus_key, modes, gravity_modes, inference, normfs, rx_queue_id, Some(command));
+    }
+
+    /// Live-updates the gain of an already-running gravity-comp task (e.g.
+    /// from a UI slider), without restarting it. No-op (logged) if gravity
+    /// comp isn't running on the given bus, or if the command has no gain.
+    fn handle_set_gravity_comp_gain(
+        command: mirroring::GravityCompCommand,
+        modes: &Arc<RwLock<HashMap<BusKey, mirroring::BusMode>>>,
+        gravity_modes: &Arc<RwLock<HashMap<BusKey, mirroring::GravityCompState>>>,
+        inference: &Arc<Inference>,
+        normfs: &Arc<NormFS>,
+        rx_queue_id: &normfs::QueueId,
+    ) {
+        let bus_key = match decode_gravity_comp_bus(&command.bus) {
+            Some(bus_key) => bus_key,
+            None => {
+                log::warn!("Gravity comp set-gain command missing or invalid bus");
+                return;
+            }
+        };
+
+        let gain = match command.gain_rad_per_nm {
+            Some(gain) => gain,
+            None => {
+                log::warn!("Gravity comp set-gain command for bus {:?} missing gain value", bus_key);
+                return;
+            }
+        };
+
+        if !inference.set_gravity_comp_gain(&bus_key, gain) {
+            log::warn!("Gravity comp set-gain for bus {:?} ignored: not currently running", bus_key);
+            return;
+        }
+
+        log::info!("Gravity comp gain for bus {:?} set to {}", bus_key, gain);
+
+        // No mode transition here, but re-broadcast so the new gain shows up
+        // in InferenceState.gravity_comp for any connected UI.
+        let mut modes_guard = modes.write().unwrap();
+        let mut gravity_guard = gravity_modes.write().unwrap();
+        merge_modes(&mut modes_guard, &HashMap::new(), &mut gravity_guard, &HashMap::new(), inference, normfs, rx_queue_id, None, Some(command));
     }
 
     /// Shared teardown path for both an operator-issued stop command and a

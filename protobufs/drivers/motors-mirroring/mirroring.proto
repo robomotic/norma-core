@@ -97,14 +97,26 @@ message GravityCompModeEnvelope {
 enum GravityCompCommandType {
     GCT_START_GRAVITY_COMP = 0;
     GCT_STOP_GRAVITY_COMP  = 1;
+    // Live-updates the gain of an already-running gravity-comp task, without
+    // restarting it. No-op (logged) if gravity comp isn't running on `bus`.
+    GCT_SET_GAIN           = 2;
 }
 
 message GravityCompCommand {
     GravityCompCommandType type = 1;
     MirroringBus            bus  = 2;
+
+    // Nm-to-radian gain. For GCT_START_GRAVITY_COMP this optionally overrides
+    // the configured default starting gain; for GCT_SET_GAIN this is the new
+    // live value. Ignored for GCT_STOP_GRAVITY_COMP. Hard-clamped server-side
+    // regardless of what's sent (see GRAVITY_COMP_GAIN_CEILING).
+    optional double gain_rad_per_nm = 3;
 }
 
 message GravityCompBusState {
     MirroringBus     id    = 1;
     GravityCompState state = 2;
+
+    // Currently active gain, if gravity comp is running on this bus.
+    optional double gain_rad_per_nm = 3;
 }

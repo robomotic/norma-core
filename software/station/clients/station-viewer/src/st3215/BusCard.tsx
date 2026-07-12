@@ -32,6 +32,11 @@ const MIN_CALIBRATED_RANGE = 100;
 const WEB_CONTROL_STORAGE_TTL_MS = 60_000;
 const WEB_CONTROL_MIRROR_IGNORE_AFTER_LOCAL_REQUEST_MS = 5_000;
 const WEB_CONTROL_MIRROR_CONFIRM_MS = 800;
+// Matches motors-mirroring's GravityCompConfig default and hard ceiling
+// (software/drivers/motors-mirroring/src/config.rs) - needs empirical
+// tuning on real hardware, this is just a starting point.
+const DEFAULT_GRAVITY_COMP_GAIN = 0.05;
+const MAX_GRAVITY_COMP_GAIN = 1.0;
 
 type RobotViewMode = 'model' | 'camera';
 type CameraLayoutMode = 'pip' | 'side-by-side' | 'stacked';
@@ -130,6 +135,29 @@ const BusCard: React.FC<BusCardProps> = ({
   const isFollowerBus = mirroringState?.modes?.some(
     (m) => m.id?.uniqueId === busSerialNumber && m.mode === motors_mirroring.BusMode.BR_FOLLOWER,
   );
+
+  const [gravityCompGain, setGravityCompGain] = useState<number>(DEFAULT_GRAVITY_COMP_GAIN);
+  const isEditingGravityCompGainRef = useRef(false);
+
+  useEffect(() => {
+    if (isEditingGravityCompGainRef.current) {
+      return;
+    }
+    if (typeof gravityCompEntry?.gainRadPerNm === 'number') {
+      setGravityCompGain(gravityCompEntry.gainRadPerNm);
+    }
+  }, [gravityCompEntry?.gainRadPerNm]);
+
+  useEffect(() => {
+    if (!busSerialNumber || !supportsGravityComp(bus)) {
+      return;
+    }
+    console.log('[GravityComp] state', {
+      bus: busSerialNumber,
+      enabled: isGravityCompEnabled,
+      gainRadPerNm: gravityCompEntry?.gainRadPerNm,
+    });
+  }, [bus, busSerialNumber, isGravityCompEnabled, gravityCompEntry?.gainRadPerNm]);
 
   const setWebControlledState = useCallback((nextState: boolean) => {
     setIsWebControlled(nextState);
@@ -364,11 +392,49 @@ const BusCard: React.FC<BusCardProps> = ({
       uniqueId: busSerialNumber,
     };
 
+    const command: motors_mirroring.IGravityCompCommand = isGravityCompEnabled
+      ? {
+          type: motors_mirroring.GravityCompCommandType.GCT_STOP_GRAVITY_COMP,
+          bus: target,
+        }
+      : {
+          type: motors_mirroring.GravityCompCommandType.GCT_START_GRAVITY_COMP,
+          bus: target,
+          gainRadPerNm: gravityCompGain,
+        };
+
+    console.log('[GravityComp] sending command', command);
+    await commandManager.sendGravityCompCommand(command);
+  }, [busSerialNumber, isGravityCompEnabled, gravityCompGain]);
+
+  const commitGravityCompGain = useCallback(async (nextGain: number) => {
+    if (!busSerialNumber) {
+      return;
+    }
+
+    const clamped = Math.min(Math.max(nextGain, 0), MAX_GRAVITY_COMP_GAIN);
+    setGravityCompGain(clamped);
+
+    if (!isGravityCompEnabled) {
+      // Not running yet - the value is just held locally and sent as the
+      // initial gain on the next Start command.
+      console.log('[GravityComp] gain updated locally (will apply on next start)', {
+        bus: busSerialNumber,
+        gainRadPerNm: clamped,
+      });
+      return;
+    }
+
+    const target: motors_mirroring.IMirroringBus = {
+      type: motors_mirroring.BusType.MBT_ST3215,
+      uniqueId: busSerialNumber,
+    };
+
+    console.log('[GravityComp] sending live gain update', { bus: busSerialNumber, gainRadPerNm: clamped });
     await commandManager.sendGravityCompCommand({
-      type: isGravityCompEnabled
-        ? motors_mirroring.GravityCompCommandType.GCT_STOP_GRAVITY_COMP
-        : motors_mirroring.GravityCompCommandType.GCT_START_GRAVITY_COMP,
+      type: motors_mirroring.GravityCompCommandType.GCT_SET_GAIN,
       bus: target,
+      gainRadPerNm: clamped,
     });
   }, [busSerialNumber, isGravityCompEnabled]);
 
@@ -482,25 +548,51 @@ const BusCard: React.FC<BusCardProps> = ({
             </button>
           </div>
           {supportsGravityComp(bus) && (
-            <button
-              type="button"
-              onClick={handleGravityCompToggle}
-              disabled={!busSerialNumber || isFollowerBus}
-              className={`flex h-9 items-center justify-center rounded-md border px-3 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
-                isGravityCompEnabled
-                  ? "border-accent-success-deep bg-accent-success-bg text-text-primary"
-                  : "border-border-subtle bg-surface-primary text-text-muted hover:text-text-primary"
-              }`}
-              title={
-                isFollowerBus
-                  ? "Gravity compensation is only available on a self-controlled or leader arm"
-                  : isGravityCompEnabled
-                    ? "Disable gravity compensation"
-                    : "Enable gravity compensation"
-              }
-            >
-              Gravity Comp
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={handleGravityCompToggle}
+                disabled={!busSerialNumber || isFollowerBus}
+                className={`flex h-9 items-center justify-center rounded-md border px-3 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                  isGravityCompEnabled
+                    ? "border-accent-success-deep bg-accent-success-bg text-text-primary"
+                    : "border-border-subtle bg-surface-primary text-text-muted hover:text-text-primary"
+                }`}
+                title={
+                  isFollowerBus
+                    ? "Gravity compensation is only available on a self-controlled or leader arm"
+                    : isGravityCompEnabled
+                      ? "Disable gravity compensation"
+                      : "Enable gravity compensation"
+                }
+              >
+                Gravity Comp
+              </button>
+              <input
+                type="number"
+                min={0}
+                max={MAX_GRAVITY_COMP_GAIN}
+                step={0.01}
+                value={gravityCompGain}
+                disabled={!busSerialNumber || isFollowerBus}
+                onFocus={() => {
+                  isEditingGravityCompGainRef.current = true;
+                }}
+                onChange={(e) => setGravityCompGain(Number(e.target.value))}
+                onBlur={(e) => {
+                  isEditingGravityCompGainRef.current = false;
+                  void commitGravityCompGain(Number(e.target.value));
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    (e.target as HTMLInputElement).blur();
+                  }
+                }}
+                className="h-9 w-16 rounded-md border border-border-subtle bg-surface-primary px-2 text-xs text-text-primary disabled:cursor-not-allowed disabled:opacity-60"
+                title="Gravity comp gain (rad/Nm) - tune empirically on hardware; applies live while enabled"
+                aria-label="Gravity compensation gain"
+              />
+            </div>
           )}
           <select
             value={
