@@ -1,0 +1,176 @@
+name: Station Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release tag (e.g. v0.1.0-beta.10)"
+        required: true
+        type: string
+      prerelease:
+        description: "Mark as a pre-release"
+        required: true
+        type: boolean
+        default: true
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  build-frontend:
+    name: Build station-viewer frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: software/station/clients/station-viewer
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: software/station/clients/station-viewer/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (hashes + proto + typecheck + vite build)
+        run: npm run build
+
+      - name: Upload frontend dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: station-viewer-dist
+          path: software/station/clients/station-viewer/dist
+
+  build-linux:
+    name: Build Linux binaries (amd64 + arm64)
+    needs: build-frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download frontend dist
+        uses: actions/download-artifact@v4
+        with:
+          name: station-viewer-dist
+          path: software/station/clients/station-viewer/dist
+
+      - name: Setup protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu,aarch64-unknown-linux-gnu
+
+      - name: Setup zig (for cargo-zigbuild cross-compilation)
+        uses: mlugg/setup-zig@v1
+        with:
+          version: 0.13.0
+
+      - name: Install nasm (required by turbojpeg-sys)
+        run: sudo apt-get update && sudo apt-get install -y nasm
+
+      - name: Install cargo-zigbuild
+        run: cargo install cargo-zigbuild --locked
+
+      - name: Build amd64
+        run: cargo zigbuild --release --package=station --target=x86_64-unknown-linux-gnu
+
+      - name: Build arm64
+        run: cargo zigbuild --release --package=station --target=aarch64-unknown-linux-gnu
+
+      - name: Package tarballs
+        run: |
+          mkdir -p dist-out
+          tar czf dist-out/station-linux-amd64.tar.gz -C target/x86_64-unknown-linux-gnu/release station
+          tar czf dist-out/station-linux-arm64.tar.gz -C target/aarch64-unknown-linux-gnu/release station
+
+      - name: Upload Linux binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: station-linux-binaries
+          path: dist-out/*.tar.gz
+
+  build-macos:
+    name: Build macOS binary (arm64)
+    needs: build-frontend
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download frontend dist
+        uses: actions/download-artifact@v4
+        with:
+          name: station-viewer-dist
+          path: software/station/clients/station-viewer/dist
+
+      - name: Setup protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install nasm (required by turbojpeg-sys)
+        run: brew install nasm
+
+      - name: Build
+        run: cargo build --release --package=station
+
+      - name: Package zip
+        run: |
+          mkdir -p dist-out
+          cp target/release/station dist-out/station
+          cd dist-out && zip station-macos-arm64.zip station && rm station
+
+      - name: Upload macOS binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: station-macos-binary
+          path: dist-out/*.zip
+
+  create-release:
+    name: Create GitHub Release
+    needs: [build-linux, build-macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Linux binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: station-linux-binaries
+          path: release-assets
+
+      - name: Download macOS binary
+        uses: actions/download-artifact@v4
+        with:
+          name: station-macos-binary
+          path: release-assets
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PRERELEASE_FLAG=""
+          if [ "${{ inputs.prerelease }}" = "true" ]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+
+          gh release create "${{ inputs.version }}" \
+            release-assets/*.tar.gz release-assets/*.zip \
+            --repo "${{ github.repository }}" \
+            --title "${{ inputs.version }}" \
+            --target "${{ github.sha }}" \
+            --notes "Automated build via the Station Release workflow, from commit ${{ github.sha }}." \
+            $PRERELEASE_FLAG
