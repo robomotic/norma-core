@@ -570,9 +570,9 @@ const BusCard: React.FC<BusCardProps> = ({
                 type="button"
                 onClick={handleGravityCompToggle}
                 disabled={!busSerialNumber || isFollowerBus}
-                className={`flex h-9 items-center justify-center rounded-md border px-3 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                className={`flex h-9 items-center gap-1.5 rounded-md border px-3 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
                   isGravityCompEnabled
-                    ? "border-accent-success-deep bg-accent-success-bg text-text-primary"
+                    ? "border-accent-warning-deep bg-accent-warning-deep text-surface-base"
                     : "border-border-subtle bg-surface-primary text-text-muted hover:text-text-primary"
                 }`}
                 title={
@@ -583,7 +583,11 @@ const BusCard: React.FC<BusCardProps> = ({
                       : "Enable gravity compensation"
                 }
               >
-                Gravity Comp
+                <span
+                  className={`h-2 w-2 rounded-full ${isGravityCompEnabled ? "animate-pulse bg-surface-base" : "bg-text-muted"}`}
+                  aria-hidden="true"
+                />
+                {isGravityCompEnabled ? "Gravity Comp: ON" : "Gravity Comp"}
               </button>
               <input
                 type="number"
