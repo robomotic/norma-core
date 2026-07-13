@@ -74,8 +74,15 @@ fn main() -> Result<(), Box<dyn Error>> {
         build.compile("camera_wrapper");
     }
 
-    for path in &libcamera.link_paths {
-        println!("cargo:rustc-link-search=native={}", path.display());
+    if vendored_include_dir.is_none() {
+        // pkg-config's link_paths come from the same .pc Cflags/Libs as
+        // include_paths above; when we're using the vendored artifacts the
+        // real search path is added via LIBCAMERA_LIB_DIR below instead, so
+        // skip these to avoid a bogus "unable to open library directory"
+        // linker warning for the baked-in path.
+        for path in &libcamera.link_paths {
+            println!("cargo:rustc-link-search=native={}", path.display());
+        }
     }
     if let Ok(lib_dir) = env::var("LIBCAMERA_LIB_DIR") {
         println!("cargo:rustc-link-search=native={lib_dir}");

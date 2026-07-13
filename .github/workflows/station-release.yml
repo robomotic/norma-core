@@ -137,11 +137,10 @@ jobs:
           esac
 
           cargo zigbuild --release --package=station $cargo_features_flag --target="$target"
-
-          # Normalize the output path so the packaging step doesn't need to
-          # know about the glibc-versioned target suffix.
-          mkdir -p target/aarch64-unknown-linux-gnu/release
-          cp "target/$target/release/station" target/aarch64-unknown-linux-gnu/release/station
+          # Note: the glibc-version suffix (e.g. ".2.36") is a cargo-zigbuild
+          # extension for selecting the linked glibc version - Cargo itself
+          # doesn't know about it, so the output still lands under the plain
+          # target/aarch64-unknown-linux-gnu/release/, not a versioned dir.
 
       - name: Package tarballs
         run: |
