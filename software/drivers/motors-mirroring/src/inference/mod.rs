@@ -76,6 +76,12 @@ impl Inference {
         self.gravity_comp.get_gain(bus)
     }
 
+    /// Stops every currently-running gravity-comp task. Called during
+    /// graceful process shutdown.
+    pub fn stop_all_gravity_comp(&self) {
+        self.gravity_comp.stop_all(&self.normfs);
+    }
+
     pub fn start(&self, from: BusKey, to: Vec<BusKey>) {
         let mut state = self.state.write();
 
