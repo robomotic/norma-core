@@ -74,8 +74,23 @@ impl GravityComp {
         }
 
         // One-shot setup, ahead of the hot loop: cap TorqueLimit, then enable
-        // torque, for the 7 arm motors only.
-        Self::send_setup_commands(&normfs, &bus.bus_id, config.gravity_comp.torque_limit);
+        // torque, for the 7 arm motors only. Deferred onto its own spawned
+        // task rather than called inline - this fn is invoked synchronously
+        // from within the "commands" queue's own subscription callback (see
+        // lib.rs::process_command_pack), and send_setup_commands ultimately
+        // calls normfs.enqueue() on that *same* queue. Calling it inline
+        // would re-enter that queue's enqueue/subscribe machinery from
+        // within its own callback stack. Mirroring's Inference::start/stop
+        // avoid this exact reentrancy by deferring their equivalent sends
+        // the same way - this matches that established, proven-safe pattern.
+        {
+            let setup_normfs = Arc::clone(&normfs);
+            let setup_bus_id = bus.bus_id.clone();
+            let torque_limit = config.gravity_comp.torque_limit;
+            tokio::spawn(async move {
+                Self::send_setup_commands(&setup_normfs, &setup_bus_id, torque_limit);
+            });
+        }
 
         let gain = Arc::new(RwLock::new(clamp_gravity_comp_gain(
             initial_gain.unwrap_or(config.gravity_comp.gain_rad_per_nm),
@@ -101,7 +116,23 @@ impl GravityComp {
             task.stop_flag.store(true, Ordering::SeqCst);
             task.handle.abort();
         }
-        Self::send_teardown_commands(normfs, &bus.bus_id);
+        // Deferred for the same reentrancy reason as in start() above.
+        let teardown_normfs = Arc::clone(normfs);
+        let teardown_bus_id = bus.bus_id.clone();
+        tokio::spawn(async move {
+            Self::send_teardown_commands(&teardown_normfs, &teardown_bus_id);
+        });
+    }
+
+    /// Stops every currently-running gravity-comp task, disabling torque on
+    /// each. Called during graceful process shutdown so an active gravity
+    /// comp session doesn't leave a bus's torque state undefined when the
+    /// station process exits.
+    pub fn stop_all(&self, normfs: &Arc<NormFS>) {
+        let buses: Vec<BusKey> = self.tasks.read().keys().cloned().collect();
+        for bus in buses {
+            self.stop(&bus, normfs);
+        }
     }
 
     /// Live-updates the gain for a running gravity-comp task, without
@@ -174,6 +205,11 @@ impl GravityComp {
         let mut station_state = StationState::default();
         let mut stale_cycles: u32 = 0;
         let mut overcurrent_cycles: u32 = 0;
+        // Rate-limited diagnostic summary - one line/second instead of every
+        // 20ms cycle, so the loop's actual behavior (fresh/stale, missing
+        // motors, overcurrent, computed torques/offsets, commands sent) is
+        // visible in logs without flooding them.
+        let mut last_debug_log = tokio::time::Instant::now() - std::time::Duration::from_secs(1);
 
         loop {
             if stop_flag.load(Ordering::SeqCst) {
@@ -181,6 +217,11 @@ impl GravityComp {
             }
 
             let loop_start = tokio::time::Instant::now();
+            let should_log = loop_start.duration_since(last_debug_log) >= std::time::Duration::from_secs(1);
+            if should_log {
+                last_debug_log = loop_start;
+            }
+
             station_state.update_from_st3215_queue(&normfs).await;
 
             let now_ns = systime::get_monotonic_stamp_ns();
@@ -192,6 +233,15 @@ impl GravityComp {
 
             if !fresh {
                 stale_cycles += 1;
+                if should_log {
+                    log::info!(
+                        "Gravity comp on bus {}: stale data (age_ns={:?}, stale_cycles={}/{})",
+                        bus.bus_id,
+                        bus_state.map(|b| now_ns.saturating_sub(b.monotonic_stamp_ns)),
+                        stale_cycles,
+                        config.gravity_comp.stale_cutoff_cycles
+                    );
+                }
                 if stale_cycles >= config.gravity_comp.stale_cutoff_cycles {
                     log::warn!(
                         "Gravity comp on bus {} stopping: stale data for {} consecutive cycles",
@@ -210,6 +260,9 @@ impl GravityComp {
             let bus_state = match bus_state {
                 Some(bus_state) => bus_state,
                 None => {
+                    if should_log {
+                        log::info!("Gravity comp on bus {}: bus_state unexpectedly None despite fresh=true", bus.bus_id);
+                    }
                     Self::sleep_remaining(loop_start).await;
                     continue;
                 }
@@ -218,6 +271,7 @@ impl GravityComp {
             let mut theta = [0.0f64; JOINT_COUNT];
             let mut over_current = false;
             let mut have_all_motors = true;
+            let mut missing_motor_ids = Vec::new();
 
             for (i, &motor_id) in ARM_MOTOR_IDS.iter().enumerate() {
                 match bus_state.motors.get(&motor_id) {
@@ -228,17 +282,42 @@ impl GravityComp {
                             over_current = true;
                         }
                     }
-                    None => have_all_motors = false,
+                    None => {
+                        have_all_motors = false;
+                        missing_motor_ids.push(motor_id);
+                    }
                 }
             }
 
             if !have_all_motors {
+                if should_log {
+                    log::info!(
+                        "Gravity comp on bus {}: waiting on motor data, missing motor ids {:?} (present motor ids: {:?})",
+                        bus.bus_id,
+                        missing_motor_ids,
+                        bus_state.motors.keys().collect::<Vec<_>>()
+                    );
+                }
                 Self::sleep_remaining(loop_start).await;
                 continue;
             }
 
             if over_current {
                 overcurrent_cycles += 1;
+                if should_log {
+                    let currents: Vec<(u8, u16)> = ARM_MOTOR_IDS
+                        .iter()
+                        .filter_map(|id| bus_state.motors.get(id).map(|m| (*id, m.current)))
+                        .collect();
+                    log::info!(
+                        "Gravity comp on bus {}: overcurrent (cutoff={}, overcurrent_cycles={}/{}), currents={:?}",
+                        bus.bus_id,
+                        config.gravity_comp.current_cutoff,
+                        overcurrent_cycles,
+                        config.gravity_comp.stale_cutoff_cycles,
+                        currents
+                    );
+                }
                 if overcurrent_cycles >= config.gravity_comp.stale_cutoff_cycles {
                     log::warn!(
                         "Gravity comp on bus {} stopping: overcurrent for {} consecutive cycles",
@@ -258,6 +337,7 @@ impl GravityComp {
             let torques = elrobot_dynamics::gravity_torques(&theta);
             let current_gain = *gain.read();
             let mut commands = Vec::new();
+            let mut debug_rows: Vec<(u8, f64, u16, i32, u16)> = Vec::new();
 
             for (i, &motor_id) in ARM_MOTOR_IDS.iter().enumerate() {
                 let motor = bus_state.motors.get(&motor_id).expect("checked above");
@@ -265,6 +345,15 @@ impl GravityComp {
 
                 let range_size = normalize::get_steps_range(motor.range_min, motor.range_max, &config);
                 if range_size < config.safety_margin * 2 {
+                    if should_log {
+                        log::info!(
+                            "Gravity comp on bus {}: motor {} skipped, range too narrow (range_size={}, need >= {})",
+                            bus.bus_id,
+                            motor_id,
+                            range_size,
+                            config.safety_margin * 2
+                        );
+                    }
                     continue; // not calibrated enough to safely offset this motor
                 }
 
@@ -278,11 +367,25 @@ impl GravityComp {
 
                 let goal = Self::clamp_goal(motor.present_position, offset, motor.range_min, motor.range_max, config.safety_margin, config.max_steps);
 
+                if should_log {
+                    debug_rows.push((motor_id, torques[i], motor.present_position, offset, goal));
+                }
+
                 commands.push(Command {
                     target_bus_id: bus.bus_id.clone(),
                     motor_id: motor_id as u32,
                     command: MotorCommand::Goal(goal),
                 });
+            }
+
+            if should_log {
+                log::info!(
+                    "Gravity comp on bus {}: gain={:.3}, commands_sent={}, (motor, torque_nm, present, offset_ticks, goal)={:?}",
+                    bus.bus_id,
+                    current_gain,
+                    commands.len(),
+                    debug_rows
+                );
             }
 
             if !commands.is_empty() {

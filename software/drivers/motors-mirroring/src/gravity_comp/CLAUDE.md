@@ -107,6 +107,32 @@ would be unsafe. An explicit command is always required to (re-)enable it.
 - **Hard ceilings independent of config**: `GravityCompConfig::clamped()` in
   `../config.rs` clamps `torque_limit`/`max_offset_ticks` to fixed ceilings
   regardless of what a YAML config supplies.
+- **Explicit shutdown**: `Inference::stop_all_gravity_comp()` (called from
+  `station`'s `Station::shutdown()` in `main.rs`, via the `Arc<Inference>`
+  now returned by `motors_mirroring::start()`) stops every running task and
+  disables torque before the process exits, rather than relying on implicit
+  task-drop when the tokio runtime tears down.
+- **Mutual exclusion with other GoalPosition writers**: gravity comp and
+  mirroring/"Web-controlled" both continuously write `GoalPosition` to the
+  same bus's motors, so leaving both active fights every ~20ms. The frontend
+  (`BusCard.tsx::handleControlSourceChange`) sends `GCT_STOP_GRAVITY_COMP`
+  first whenever the control-source dropdown changes for a bus with gravity
+  comp enabled.
+
+## A reentrancy pitfall already avoided here
+
+`GravityComp::start()`/`stop()` are invoked synchronously from
+`lib.rs::process_command_pack`, which is itself the "commands" normfs
+queue's own subscription callback. `send_setup_commands`/
+`send_teardown_commands` call `Inference::send_st3215_commands`, which
+enqueues onto that *same* "commands" queue. Calling them inline would
+re-enter that queue's enqueue/subscribe machinery from within its own
+callback stack. Both are deferred onto their own `tokio::spawn`'d task to
+break that reentrancy — matching the pattern `Inference::start`/`stop`
+already use for mirroring's equivalent sends. If you add a new gravity-comp
+code path that calls `send_st3215_commands` (or anything that calls
+`normfs.enqueue` on the commands queue) from a handler in `lib.rs`, defer it
+the same way rather than calling it inline.
 
 ## Tuning
 
@@ -159,3 +185,14 @@ substitute for on-arm validation.
 mirrored to a follower. This is a genuinely new code path — before this
 module existed, `Inference` never wrote `GoalPosition` to a *source* bus's
 own motors, only to *targets*.
+
+**On-hardware diagnostics**: `run_control_loop` logs a rate-limited (once/
+second, not every 20ms cycle) summary at `INFO` level covering exactly what
+each branch is doing that cycle - staleness, which motor IDs are missing (if
+any), overcurrent readings per motor, and for the normal path, each motor's
+computed gravity torque/offset/goal and whether commands were actually sent.
+Check the `station` process's own log output (not the browser console) when
+gravity comp seems to have no effect - this tells you definitively whether
+the loop is stuck waiting on motor data, tripping the overcurrent cutoff, or
+genuinely sending goals that are just too small to feel (a gain problem, not
+a code problem).

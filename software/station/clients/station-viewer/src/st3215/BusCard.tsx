@@ -135,6 +135,7 @@ const BusCard: React.FC<BusCardProps> = ({
   const isFollowerBus = mirroringState?.modes?.some(
     (m) => m.id?.uniqueId === busSerialNumber && m.mode === motors_mirroring.BusMode.BR_FOLLOWER,
   );
+  const gravityCompSupported = supportsGravityComp(bus);
 
   const [gravityCompGain, setGravityCompGain] = useState<number>(DEFAULT_GRAVITY_COMP_GAIN);
   const isEditingGravityCompGainRef = useRef(false);
@@ -149,15 +150,19 @@ const BusCard: React.FC<BusCardProps> = ({
   }, [gravityCompEntry?.gainRadPerNm]);
 
   useEffect(() => {
-    if (!busSerialNumber || !supportsGravityComp(bus)) {
+    if (!busSerialNumber || !gravityCompSupported) {
       return;
     }
+    // Deliberately excludes `bus` from deps - it's a new object reference
+    // every poll (~50Hz), which would fire this on every frame regardless
+    // of whether anything actually changed. This only logs on real
+    // transitions.
     console.log('[GravityComp] state', {
       bus: busSerialNumber,
       enabled: isGravityCompEnabled,
       gainRadPerNm: gravityCompEntry?.gainRadPerNm,
     });
-  }, [bus, busSerialNumber, isGravityCompEnabled, gravityCompEntry?.gainRadPerNm]);
+  }, [gravityCompSupported, busSerialNumber, isGravityCompEnabled, gravityCompEntry?.gainRadPerNm]);
 
   const setWebControlledState = useCallback((nextState: boolean) => {
     setIsWebControlled(nextState);
@@ -314,6 +319,18 @@ const BusCard: React.FC<BusCardProps> = ({
       return;
     }
 
+    // Gravity comp and any other control source (web-controlled or
+    // mirroring) both continuously write GoalPosition to this bus's own
+    // motors - if gravity comp were left running, it would fight whatever
+    // this control source tries to do 20ms later. Stop it first.
+    if (isGravityCompEnabled) {
+      console.log('[GravityComp] stopping: control source changed', { bus: busSerialNumber, sourceBusSerial });
+      await commandManager.sendGravityCompCommand({
+        type: motors_mirroring.GravityCompCommandType.GCT_STOP_GRAVITY_COMP,
+        bus: { type: motors_mirroring.BusType.MBT_ST3215, uniqueId: busSerialNumber },
+      });
+    }
+
     if (sourceBusSerial === 'web-controlled') {
       const target: motors_mirroring.IMirroringBus = {
         type: motors_mirroring.BusType.MBT_ST3215,
@@ -380,7 +397,7 @@ const BusCard: React.FC<BusCardProps> = ({
       });
       setWebControlledState(false);
     }
-  }, [bus.motors, busSerialNumber, setWebControlledState]);
+  }, [bus.motors, busSerialNumber, isGravityCompEnabled, setWebControlledState]);
 
   const handleGravityCompToggle = useCallback(async () => {
     if (!busSerialNumber) {
@@ -547,7 +564,7 @@ const BusCard: React.FC<BusCardProps> = ({
               <Camera className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
-          {supportsGravityComp(bus) && (
+          {gravityCompSupported && (
             <div className="flex items-center gap-1">
               <button
                 type="button"

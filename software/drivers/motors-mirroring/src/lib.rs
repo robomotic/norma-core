@@ -18,7 +18,7 @@ pub mod proto {
 
 pub mod config;
 mod r#types;
-mod inference;
+pub mod inference;
 mod gravity_comp;
 
 use r#types::BusKey;
@@ -27,11 +27,16 @@ const MODES_QUEUE_ID: &str = "motors_mirroring/modes";
 const GRAVITY_MODES_QUEUE_ID: &str = "motors_mirroring/gravity_comp_modes";
 const RX_QUEUE_ID: &str = "inference/mirroring";
 
+/// Returns the shared `Inference` handle so callers (e.g. the station
+/// binary's shutdown sequence) can explicitly stop any running gravity-comp
+/// tasks - and thus disable torque on their buses - before the process
+/// exits, rather than leaving it to implicit task-drop when the runtime
+/// tears down.
 pub async fn start<T: StationEngine>(
     normfs: Arc<NormFS>,
     station_engine: Arc<T>,
     motor_config: config::MotorConfig,
-) -> Result<(), normfs::Error> {
+) -> Result<Arc<Inference>, normfs::Error> {
         let modes_queue_id = normfs.resolve(MODES_QUEUE_ID);
         let gravity_modes_queue_id = normfs.resolve(GRAVITY_MODES_QUEUE_ID);
         let rx_queue_id = normfs.resolve(RX_QUEUE_ID);
@@ -218,7 +223,7 @@ pub async fn start<T: StationEngine>(
             true
         }))?;
 
-        Ok(())
+        Ok(inf)
 }
 
 #[allow(clippy::too_many_arguments)]
