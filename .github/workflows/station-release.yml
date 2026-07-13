@@ -12,6 +12,11 @@ on:
         required: true
         type: boolean
         default: true
+      features:
+        description: "Cargo features for the ARM64 build only, comma-separated (e.g. yahboom-dogzilla-lite)"
+        required: false
+        type: string
+        default: ""
 
 env:
   NODE_VERSION: "22"
@@ -98,8 +103,45 @@ jobs:
       - name: Build amd64
         run: cargo build --release --package=station --target=x86_64-unknown-linux-gnu
 
+      # Mirrors the FEATURES handling in software/station/bin/station/Makefile:
+      # yahboom-dogzilla-lite implies the ov5647 (libcamera) feature and must
+      # target glibc 2.36 (Raspberry Pi OS / Debian Bookworm), while a plain
+      # build keeps the base aarch64-unknown-linux-gnu target.
       - name: Build arm64
-        run: cargo zigbuild --release --package=station --target=aarch64-unknown-linux-gnu
+        env:
+          FEATURES: ${{ inputs.features }}
+        run: |
+          target=aarch64-unknown-linux-gnu
+          features="$FEATURES"
+          case ",$features," in
+            *,yahboom-dogzilla-lite,*)
+              case ",$features," in
+                *,ov5647,*) ;;
+                *) features="$features,ov5647" ;;
+              esac
+              target=aarch64-unknown-linux-gnu.2.36
+              ;;
+          esac
+
+          cargo_features_flag=""
+          if [ -n "$features" ]; then
+            cargo_features_flag="--features $features"
+          fi
+
+          case ",$features," in
+            *,ov5647,*)
+              export PKG_CONFIG_PATH="$PWD/shared/libcamera/library/0.7.0/usr/lib/aarch64-linux-gnu/pkgconfig"
+              export PKG_CONFIG_ALLOW_CROSS=1
+              export LIBCAMERA_LIB_DIR="$PWD/shared/libcamera/library/0.7.0/usr/lib/aarch64-linux-gnu"
+              ;;
+          esac
+
+          cargo zigbuild --release --package=station $cargo_features_flag --target="$target"
+
+          # Normalize the output path so the packaging step doesn't need to
+          # know about the glibc-versioned target suffix.
+          mkdir -p target/aarch64-unknown-linux-gnu/release
+          cp "target/$target/release/station" target/aarch64-unknown-linux-gnu/release/station
 
       - name: Package tarballs
         run: |
