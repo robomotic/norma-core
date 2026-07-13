@@ -1,0 +1,10 @@
+prefix=/home/priamai/norma-core-1/shared/libcamera/../../shared/libcamera/library/0.7.0-bookworm/usr
+includedir=${prefix}/include
+libdir=${prefix}/lib/aarch64-linux-gnu
+
+Name: libpisp
+Description: PiSP Library
+Version: 1.3.0
+Libs: -L${libdir} -lpisp
+Libs.private: -pthread -ldl
+Cflags: -I${includedir}/libpisp

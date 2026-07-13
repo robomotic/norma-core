@@ -26,6 +26,7 @@ git -C "$ROOT_DIR/$LIBCAMERA_SRC_DIR" reset --hard "$LIBCAMERA_TAG"
 git -C "$ROOT_DIR/$LIBCAMERA_SRC_DIR" clean -fdx
 
 docker run --platform=linux/arm64 --rm \
+    --user "$(id -u):$(id -g)" \
     -v "$ROOT_DIR:/mnt" \
     -w /mnt \
     "$BUILD_IMAGE" bash -c '
