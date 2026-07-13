@@ -17,7 +17,32 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let target = env::var("TARGET").unwrap_or_default();
     let host = env::var("HOST").unwrap_or_default();
-    let is_cross = target != host && target.contains("linux") && !host.contains("linux");
+    // Any target/host mismatch is a cross-compile, not just building from a
+    // non-Linux host (e.g. a Linux amd64 CI runner cross-compiling to Linux
+    // arm64 is cross-compiling too, and must link the pre-built wrapper
+    // rather than compiling wrapper.cpp against the checked-in .pc files,
+    // whose Cflags bake in an absolute path from wherever they were built.
+    let is_cross = target != host;
+
+    // The checked-in .pc files bake in an absolute path from wherever the
+    // vendored libcamera artifacts were originally built (e.g.
+    // /Users/<someone>/...), which is wrong on any other machine. When
+    // LIBCAMERA_LIB_DIR points at those vendored artifacts (set by the
+    // Makefile/CI whenever the ov5647 feature is on), derive the include
+    // dir from it instead of trusting pkg-config's Cflags. Falls back to
+    // pkg-config's paths for a genuine native build against a system
+    // libcamera-dev install (e.g. apt-installed on a Pi), where
+    // LIBCAMERA_LIB_DIR won't be set.
+    let vendored_include_dir = env::var("LIBCAMERA_LIB_DIR").ok().and_then(|lib_dir| {
+        Path::new(&lib_dir)
+            .parent()
+            .and_then(Path::parent)
+            .map(|usr| usr.join("include"))
+    });
+    let include_paths: Vec<PathBuf> = match &vendored_include_dir {
+        Some(dir) => vec![dir.clone()],
+        None => libcamera.include_paths.clone(),
+    };
 
     if is_cross {
         let lib_dir = env::var("LIBCAMERA_LIB_DIR").map_err(|_| {
@@ -42,7 +67,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             .file("wrapper.cpp")
             .warnings(false);
 
-        for path in &libcamera.include_paths {
+        for path in &include_paths {
             build.include(path);
         }
 
@@ -74,7 +99,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .allowlist_var("LC_.*")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()));
 
-    for path in &libcamera.include_paths {
+    for path in &include_paths {
         builder = builder.clang_arg(format!("-I{}", path.display()));
     }
 
