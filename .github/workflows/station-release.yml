@@ -39,6 +39,9 @@ jobs:
 
       - name: Compute release tag
         id: tag
+        env:
+          FEATURES: ${{ inputs.features }}
+          GLIBC: ${{ inputs.glibc }}
         run: |
           if [ -n "${{ inputs.version }}" ]; then
             TAG="${{ inputs.version }}"
@@ -47,7 +50,22 @@ jobs:
             # workflow, so a blank input always produces a fresh, unique tag
             # without anyone having to remember the last one used.
             BASE_VERSION=$(grep -m1 '^version' Cargo.toml | sed -E 's/version = "(.*)"/\1/')
-            TAG="v${BASE_VERSION}-${{ github.run_number }}"
+
+            SUFFIX=""
+            case ",$FEATURES," in
+              *,yahboom-dogzilla-lite,*)
+                SUFFIX="-dogzilla"
+                # Bookworm (glibc 2.36) is the implied default when
+                # yahboom-dogzilla-lite is selected without an explicit
+                # glibc, so it's left off the tag; only Bullseye is called
+                # out, to keep the common case's tag short.
+                if [ "$GLIBC" = "2.31" ]; then
+                  SUFFIX="$SUFFIX-bullseye"
+                fi
+                ;;
+            esac
+
+            TAG="v${BASE_VERSION}${SUFFIX}-${{ github.run_number }}"
           fi
           echo "Resolved release tag: $TAG"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
