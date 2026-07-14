@@ -94,7 +94,12 @@ g++ -c -std=c++17 -fPIC -O2 -fno-exceptions -fno-rtti \
 LIBSTDCPP_A=$(g++ -print-file-name=libstdc++.a)
 ROOTS=$(nm -g /tmp/wrapper.o | sed -n "s/.* T \(lc_.*\)$/-u \1/p" | tr "\n" " ")
 
-ld -r --gc-sections $ROOTS -o /tmp/camera_wrapper.o \
+# No --gc-sections here: the final Rust link (via lld) does its own
+# gc-sections pass anyway, and on older binutils (e.g. bullseye, 2.35) GNU
+# ld'"'"'s --gc-sections output at this intermediate relocatable-link stage
+# produced exception-table relocations that lld could not resolve
+# ("relocation refers to a discarded section").
+ld -r $ROOTS -o /tmp/camera_wrapper.o \
     /tmp/wrapper.o /tmp/glibc_compat.o "$LIBSTDCPP_A"
 
 ar rcs "$WRAPPER_OUT/libcamera_wrapper.a" /tmp/camera_wrapper.o
