@@ -4,19 +4,72 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release tag (e.g. v0.1.0-beta.10)"
-        required: true
+        description: "Release tag (e.g. v0.1.0-beta.10). Leave empty to auto-generate: v<workspace-version>-<run-number>"
+        required: false
         type: string
+        default: ""
       prerelease:
         description: "Mark as a pre-release"
         required: true
         type: boolean
         default: true
+      features:
+        description: "Cargo features for the ARM64 build only, comma-separated (e.g. yahboom-dogzilla-lite)"
+        required: false
+        type: string
+        default: ""
+      glibc:
+        description: "ARM64 glibc target: 2.36 (Bookworm) or 2.31 (Bullseye). Defaults to 2.36 when yahboom-dogzilla-lite is in features, otherwise unset (base target)."
+        required: false
+        type: string
+        default: ""
 
 env:
   NODE_VERSION: "22"
 
 jobs:
+  determine-version:
+    name: Determine release version
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compute release tag
+        id: tag
+        env:
+          FEATURES: ${{ inputs.features }}
+          GLIBC: ${{ inputs.glibc }}
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            TAG="${{ inputs.version }}"
+          else
+            # github.run_number auto-increments on every dispatch of this
+            # workflow, so a blank input always produces a fresh, unique tag
+            # without anyone having to remember the last one used.
+            BASE_VERSION=$(grep -m1 '^version' Cargo.toml | sed -E 's/version = "(.*)"/\1/')
+
+            SUFFIX=""
+            case ",$FEATURES," in
+              *,yahboom-dogzilla-lite,*)
+                SUFFIX="-dogzilla"
+                # Bookworm (glibc 2.36) is the implied default when
+                # yahboom-dogzilla-lite is selected without an explicit
+                # glibc, so it's left off the tag; only Bullseye is called
+                # out, to keep the common case's tag short.
+                if [ "$GLIBC" = "2.31" ]; then
+                  SUFFIX="$SUFFIX-bullseye"
+                fi
+                ;;
+            esac
+
+            TAG="v${BASE_VERSION}${SUFFIX}-${{ github.run_number }}"
+          fi
+          echo "Resolved release tag: $TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
   build-frontend:
     name: Build station-viewer frontend
     runs-on: ubuntu-latest
@@ -98,8 +151,60 @@ jobs:
       - name: Build amd64
         run: cargo build --release --package=station --target=x86_64-unknown-linux-gnu
 
+      # Mirrors the FEATURES/GLIBC handling in
+      # software/station/bin/station/Makefile: yahboom-dogzilla-lite implies
+      # the ov5647 (libcamera) feature and, unless glibc is set explicitly,
+      # defaults to targeting glibc 2.36 (Raspberry Pi OS / Debian Bookworm).
+      # Pass glibc=2.31 for a Bullseye build instead. Each glibc target links
+      # against vendored libcamera artifacts built from a matching base image
+      # (shared/libcamera/library/0.7.0-<bookworm|bullseye>/ - see
+      # shared/libcamera/Makefile) so the resulting binary only needs glibc
+      # symbols the target OS actually has.
       - name: Build arm64
-        run: cargo zigbuild --release --package=station --target=aarch64-unknown-linux-gnu
+        env:
+          FEATURES: ${{ inputs.features }}
+          GLIBC: ${{ inputs.glibc }}
+        run: |
+          target=aarch64-unknown-linux-gnu
+          features="$FEATURES"
+          glibc="$GLIBC"
+          case ",$features," in
+            *,yahboom-dogzilla-lite,*)
+              case ",$features," in
+                *,ov5647,*) ;;
+                *) features="$features,ov5647" ;;
+              esac
+              glibc="${glibc:-2.36}"
+              ;;
+          esac
+          if [ -n "$glibc" ]; then
+            target="aarch64-unknown-linux-gnu.$glibc"
+          fi
+
+          cargo_features_flag=""
+          if [ -n "$features" ]; then
+            cargo_features_flag="--features $features"
+          fi
+
+          case ",$features," in
+            *,ov5647,*)
+              case "$glibc" in
+                2.36) variant=bookworm ;;
+                2.31) variant=bullseye ;;
+                *) echo "::error::ov5647/yahboom-dogzilla-lite requires glibc=2.36 or glibc=2.31 (got '$glibc')"; exit 1 ;;
+              esac
+              libcamera_dir="$PWD/shared/libcamera/library/0.7.0-$variant"
+              export PKG_CONFIG_PATH="$libcamera_dir/usr/lib/aarch64-linux-gnu/pkgconfig"
+              export PKG_CONFIG_ALLOW_CROSS=1
+              export LIBCAMERA_LIB_DIR="$libcamera_dir/usr/lib/aarch64-linux-gnu"
+              ;;
+          esac
+
+          cargo zigbuild --release --package=station $cargo_features_flag --target="$target"
+          # Note: the glibc-version suffix (e.g. ".2.36") is a cargo-zigbuild
+          # extension for selecting the linked glibc version - Cargo itself
+          # doesn't know about it, so the output still lands under the plain
+          # target/aarch64-unknown-linux-gnu/release/, not a versioned dir.
 
       - name: Package tarballs
         run: |
@@ -155,7 +260,7 @@ jobs:
 
   create-release:
     name: Create GitHub Release
-    needs: [build-linux, build-macos]
+    needs: [determine-version, build-linux, build-macos]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -175,16 +280,17 @@ jobs:
       - name: Create release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.determine-version.outputs.tag }}
         run: |
           PRERELEASE_FLAG=""
           if [ "${{ inputs.prerelease }}" = "true" ]; then
             PRERELEASE_FLAG="--prerelease"
           fi
 
-          gh release create "${{ inputs.version }}" \
+          gh release create "$TAG" \
             release-assets/*.tar.gz release-assets/*.zip \
             --repo "${{ github.repository }}" \
-            --title "${{ inputs.version }}" \
+            --title "$TAG" \
             --target "${{ github.sha }}" \
             --notes "Automated build via the Station Release workflow, from commit ${{ github.sha }}." \
             $PRERELEASE_FLAG
