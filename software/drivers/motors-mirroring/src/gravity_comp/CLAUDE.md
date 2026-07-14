@@ -142,26 +142,59 @@ the ST3215's internal PID coefficients — those are undocumented firmware
 units. It must be tuned empirically on real hardware: start low, increase
 until the arm feels weightless without oscillating.
 
+**Per-joint, not global.** A single gain cannot satisfy every joint at once —
+different joints carry very different gravity-torque magnitudes and see the
+saturating `max_offset_ticks` clamp at different points. `gain_rad_per_nm` is
+therefore a `[f64; 7]` (`JointGains`, one value per arm motor 1-7), not a
+scalar. A saturated joint doesn't just fail to hold its own pose — through
+the rigid kinematic chain it can drag an unsaturated downstream joint along
+with it (observed on hardware: joints 2/3/4 pinned at the ±60-tick ceiling
+under a high global gain caused joint 5 to drift/rotate on its own even
+though its individual offset was shrinking). Lowering the gain on the
+saturating upstream joints, rather than raising the downstream one further,
+is the fix.
+
 **Live, from the UI, without a restart** — this is the expected way to tune
-it day-to-day. The "Gravity Comp" button in `BusCard.tsx` has a gain input
-next to it. While gravity comp is running, changing that value sends a
-`GCT_SET_GAIN` command that updates the running control loop's gain
-in-place (`GravityComp::set_gain` → `Arc<RwLock<f64>>` read once per 20ms
-cycle in `run_control_loop`, not re-read from the static `MotorConfig`).
-Starting gravity comp also accepts an optional initial gain override on the
-`GCT_START_GRAVITY_COMP` command, so the UI's current input value is used
-immediately rather than always falling back to the config default. The
-active gain is broadcast back in `GravityCompBusState.gain_rad_per_nm` so
-the UI reflects reality (e.g. after a page reload) rather than only its own
+it day-to-day. `MotorDataTable.tsx` has a "GRAV" column (between MAX and
+STATUS) with one gain input per arm motor (1-7; the gripper, motor 8, shows
+"-" and is never editable). Changing a value sends a per-motor `GCT_SET_GAIN`
+command (`motor_id` + `gain_rad_per_nm`) that always updates the staged
+per-bus `GravitySettings` server-side, and additionally updates the running
+control loop in-place if gravity comp is currently enabled
+(`GravityComp::set_gain` → `Arc<RwLock<JointGains>>`, indexed by
+`motor_id_to_index`, read once per 20ms cycle in `run_control_loop` — never
+re-read from the static `MotorConfig`). `BusCard.tsx` also has a global
+"Torque Limit" input (`GCT_SET_TORQUE_LIMIT`) next to the "Gravity Comp"
+toggle — unlike gain, this is real hardware register state, so setting it
+immediately re-sends a `TorqueLimit` write regardless of whether the loop is
+running. Starting gravity comp (`GCT_START_GRAVITY_COMP`) never carries a
+gain/torque-limit payload itself; the backend always seeds the new task from
+whatever is currently staged for that bus (`ensure_gravity_settings` in
+`../lib.rs`, falling back to `Inference::gravity_comp_defaults()` if nothing
+has ever been staged). The active values are broadcast back in
+`GravityCompBusState.joint_gains_rad_per_nm`/`torque_limit` so the UI
+reflects reality (e.g. after a page reload) rather than only its own
 locally-remembered value.
+
+**Persisting across restarts**: staged edits (per-joint gains and torque
+limit) live only in the in-memory `gravity_settings` map until the operator
+clicks "SAVE GRAVITY" (`BusCard.tsx` → `GCT_SAVE_SETTINGS` →
+`handle_save_gravity_comp_settings` in `../lib.rs`), which writes a
+`GravityCompSettingsEnvelope` to its own normfs queue
+(`motors_mirroring/gravity_comp_settings`). That queue is restored on
+startup the same way the gravity-comp *mode* queue is — display/pre-fill
+only, so a restart shows the last-saved values in the table without ever
+re-arming the control loop itself.
 
 Since the default gain is quite conservative, a fresh install will likely
 feel like *nothing is happening* at first — this is expected, not a bug; see
 the worked example below.
 
-**Config-file default** (used only as the starting point before any live
-override): `gravity-comp:` under `drivers.st3215` in the station YAML config
-(see `software/station/shared/station-iface/src/config.rs::GravityCompConfig`).
+**Config-file default** (used only as the starting point before anything has
+ever been staged/saved for a bus): `gravity-comp:` under `drivers.st3215` in
+the station YAML config (see
+`software/station/shared/station-iface/src/config.rs::GravityCompConfig`) —
+applied uniformly to all 7 joints via `Inference::gravity_comp_defaults()`.
 
 **Sanity-checking the numbers**: for a horizontal-reach pose
 (`theta = [0, 1.5, 0, 0, 0, 0, 0]`), `gravity_torques()` gives roughly

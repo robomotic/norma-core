@@ -7,8 +7,14 @@ pub const GRAVITY_COMP_REFRESH_INTERVAL: Duration = Duration::from_millis(20);
 
 /// Hard ceilings enforced in code regardless of what a config file supplies -
 /// a misconfigured value can never push the arm past these.
-const GRAVITY_COMP_TORQUE_LIMIT_CEILING: u16 = 150;
+pub const GRAVITY_COMP_TORQUE_LIMIT_CEILING: u16 = 150;
 const GRAVITY_COMP_MAX_OFFSET_TICKS_CEILING: u16 = 200;
+
+/// Clamps a torque limit (config-supplied or live from the UI) to the hard
+/// ceiling, independent of source.
+pub fn clamp_gravity_comp_torque_limit(value: u16) -> u16 {
+    value.min(GRAVITY_COMP_TORQUE_LIMIT_CEILING)
+}
 
 /// Hard ceiling on `gain_rad_per_nm`, including when set live from the UI
 /// (see `gravity_comp::GravityComp::set_gain`) - independent of any
@@ -60,7 +66,7 @@ impl GravityCompConfig {
     /// Clamp user-supplied values to hard safety ceilings - never trust
     /// configured values alone.
     pub fn clamped(mut self) -> Self {
-        self.torque_limit = self.torque_limit.min(GRAVITY_COMP_TORQUE_LIMIT_CEILING);
+        self.torque_limit = clamp_gravity_comp_torque_limit(self.torque_limit);
         self.max_offset_ticks = self.max_offset_ticks.min(GRAVITY_COMP_MAX_OFFSET_TICKS_CEILING);
         self.gain_rad_per_nm = clamp_gravity_comp_gain(self.gain_rad_per_nm);
         self

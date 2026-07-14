@@ -247,6 +247,7 @@ export namespace drivers {
         QDT_MOTOR_MIRRORING_MODES = 30,
         QDT_MOTOR_MIRRORING_RX = 32,
         QDT_MOTOR_MIRRORING_GRAVITY_COMP_MODES = 33,
+        QDT_MOTOR_MIRRORING_GRAVITY_COMP_SETTINGS = 34,
         QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX = 40,
         QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX = 41,
         QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE = 42
@@ -5611,7 +5612,9 @@ export namespace motors_mirroring {
     enum GravityCompCommandType {
         GCT_START_GRAVITY_COMP = 0,
         GCT_STOP_GRAVITY_COMP = 1,
-        GCT_SET_GAIN = 2
+        GCT_SET_GAIN = 2,
+        GCT_SET_TORQUE_LIMIT = 3,
+        GCT_SAVE_SETTINGS = 4
     }
 
     /** Properties of a GravityCompCommand. */
@@ -5625,6 +5628,12 @@ export namespace motors_mirroring {
 
         /** GravityCompCommand gainRadPerNm */
         gainRadPerNm?: (number|null);
+
+        /** GravityCompCommand motorId */
+        motorId?: (number|null);
+
+        /** GravityCompCommand torqueLimit */
+        torqueLimit?: (number|null);
     }
 
     /** Represents a GravityCompCommand. */
@@ -5644,6 +5653,12 @@ export namespace motors_mirroring {
 
         /** GravityCompCommand gainRadPerNm. */
         public gainRadPerNm?: (number|null);
+
+        /** GravityCompCommand motorId. */
+        public motorId?: (number|null);
+
+        /** GravityCompCommand torqueLimit. */
+        public torqueLimit?: (number|null);
 
         /**
          * Creates a new GravityCompCommand instance using the specified properties.
@@ -5732,8 +5747,11 @@ export namespace motors_mirroring {
         /** GravityCompBusState state */
         state?: (motors_mirroring.GravityCompState|null);
 
-        /** GravityCompBusState gainRadPerNm */
-        gainRadPerNm?: (number|null);
+        /** GravityCompBusState jointGainsRadPerNm */
+        jointGainsRadPerNm?: (number[]|null);
+
+        /** GravityCompBusState torqueLimit */
+        torqueLimit?: (number|null);
     }
 
     /** Represents a GravityCompBusState. */
@@ -5751,8 +5769,11 @@ export namespace motors_mirroring {
         /** GravityCompBusState state. */
         public state: motors_mirroring.GravityCompState;
 
-        /** GravityCompBusState gainRadPerNm. */
-        public gainRadPerNm?: (number|null);
+        /** GravityCompBusState jointGainsRadPerNm. */
+        public jointGainsRadPerNm: number[];
+
+        /** GravityCompBusState torqueLimit. */
+        public torqueLimit?: (number|null);
 
         /**
          * Creates a new GravityCompBusState instance using the specified properties.
@@ -5826,6 +5847,133 @@ export namespace motors_mirroring {
 
         /**
          * Gets the default type url for GravityCompBusState
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a GravityCompSettingsEnvelope. */
+    interface IGravityCompSettingsEnvelope {
+
+        /** GravityCompSettingsEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** GravityCompSettingsEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** GravityCompSettingsEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** GravityCompSettingsEnvelope bus */
+        bus?: (motors_mirroring.IMirroringBus|null);
+
+        /** GravityCompSettingsEnvelope jointGainsRadPerNm */
+        jointGainsRadPerNm?: (number[]|null);
+
+        /** GravityCompSettingsEnvelope torqueLimit */
+        torqueLimit?: (number|null);
+    }
+
+    /** Represents a GravityCompSettingsEnvelope. */
+    class GravityCompSettingsEnvelope implements IGravityCompSettingsEnvelope {
+
+        /**
+         * Constructs a new GravityCompSettingsEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: motors_mirroring.IGravityCompSettingsEnvelope);
+
+        /** GravityCompSettingsEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** GravityCompSettingsEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** GravityCompSettingsEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** GravityCompSettingsEnvelope bus. */
+        public bus?: (motors_mirroring.IMirroringBus|null);
+
+        /** GravityCompSettingsEnvelope jointGainsRadPerNm. */
+        public jointGainsRadPerNm: number[];
+
+        /** GravityCompSettingsEnvelope torqueLimit. */
+        public torqueLimit: number;
+
+        /**
+         * Creates a new GravityCompSettingsEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns GravityCompSettingsEnvelope instance
+         */
+        public static create(properties?: motors_mirroring.IGravityCompSettingsEnvelope): motors_mirroring.GravityCompSettingsEnvelope;
+
+        /**
+         * Encodes the specified GravityCompSettingsEnvelope message. Does not implicitly {@link motors_mirroring.GravityCompSettingsEnvelope.verify|verify} messages.
+         * @param message GravityCompSettingsEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: motors_mirroring.IGravityCompSettingsEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified GravityCompSettingsEnvelope message, length delimited. Does not implicitly {@link motors_mirroring.GravityCompSettingsEnvelope.verify|verify} messages.
+         * @param message GravityCompSettingsEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: motors_mirroring.IGravityCompSettingsEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a GravityCompSettingsEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns GravityCompSettingsEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): motors_mirroring.GravityCompSettingsEnvelope;
+
+        /**
+         * Decodes a GravityCompSettingsEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns GravityCompSettingsEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): motors_mirroring.GravityCompSettingsEnvelope;
+
+        /**
+         * Verifies a GravityCompSettingsEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a GravityCompSettingsEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns GravityCompSettingsEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): motors_mirroring.GravityCompSettingsEnvelope;
+
+        /**
+         * Creates a plain object from a GravityCompSettingsEnvelope message. Also converts values to other types if specified.
+         * @param message GravityCompSettingsEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: motors_mirroring.GravityCompSettingsEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this GravityCompSettingsEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for GravityCompSettingsEnvelope
          * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns The default type url
          */

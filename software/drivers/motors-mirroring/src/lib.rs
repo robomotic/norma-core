@@ -8,7 +8,12 @@ use normfs::NormFS;
 use tokio::sync::mpsc;
 use normfs::UintN;
 
-use crate::{inference::Inference, proto::mirroring::{self, ModeEnvelope, GravityCompModeEnvelope}};
+use crate::{
+    config::{clamp_gravity_comp_gain, clamp_gravity_comp_torque_limit},
+    gravity_comp::GravitySettings,
+    inference::Inference,
+    proto::mirroring::{self, ModeEnvelope, GravityCompModeEnvelope, GravityCompSettingsEnvelope},
+};
 
 pub mod proto {
     pub mod mirroring {
@@ -25,7 +30,12 @@ use r#types::BusKey;
 
 const MODES_QUEUE_ID: &str = "motors_mirroring/modes";
 const GRAVITY_MODES_QUEUE_ID: &str = "motors_mirroring/gravity_comp_modes";
+const GRAVITY_SETTINGS_QUEUE_ID: &str = "motors_mirroring/gravity_comp_settings";
 const RX_QUEUE_ID: &str = "inference/mirroring";
+
+type ModesMap = Arc<RwLock<HashMap<BusKey, mirroring::BusMode>>>;
+type GravityModesMap = Arc<RwLock<HashMap<BusKey, mirroring::GravityCompState>>>;
+type GravitySettingsMap = Arc<RwLock<HashMap<BusKey, GravitySettings>>>;
 
 /// Returns the shared `Inference` handle so callers (e.g. the station
 /// binary's shutdown sequence) can explicitly stop any running gravity-comp
@@ -39,10 +49,12 @@ pub async fn start<T: StationEngine>(
 ) -> Result<Arc<Inference>, normfs::Error> {
         let modes_queue_id = normfs.resolve(MODES_QUEUE_ID);
         let gravity_modes_queue_id = normfs.resolve(GRAVITY_MODES_QUEUE_ID);
+        let gravity_settings_queue_id = normfs.resolve(GRAVITY_SETTINGS_QUEUE_ID);
         let rx_queue_id = normfs.resolve(RX_QUEUE_ID);
 
         normfs.ensure_queue_exists_for_write(&modes_queue_id).await?;
         normfs.ensure_queue_exists_for_write(&gravity_modes_queue_id).await?;
+        normfs.ensure_queue_exists_for_write(&gravity_settings_queue_id).await?;
         normfs.ensure_queue_exists_for_write(&rx_queue_id).await?;
 
         station_engine.register_queue(
@@ -58,20 +70,29 @@ pub async fn start<T: StationEngine>(
         );
 
         station_engine.register_queue(
+            &gravity_settings_queue_id,
+            drivers::QueueDataType::QdtMotorMirroringGravityCompSettings,
+            vec![],
+        );
+
+        station_engine.register_queue(
             &rx_queue_id,
             drivers::QueueDataType::QdtMotorMirroringRx,
             vec![],
         );
 
-        let modes = Arc::new(RwLock::new(HashMap::new()));
-        let gravity_modes = Arc::new(RwLock::new(HashMap::new()));
+        let modes: ModesMap = Arc::new(RwLock::new(HashMap::new()));
+        let gravity_modes: GravityModesMap = Arc::new(RwLock::new(HashMap::new()));
+        let gravity_settings: GravitySettingsMap = Arc::new(RwLock::new(HashMap::new()));
 
         let task_modes = modes.clone();
         let task_gravity_modes = gravity_modes.clone();
         let reading_normfs = normfs.clone();
         let reading_gravity_normfs = normfs.clone();
+        let reading_gravity_settings_normfs = normfs.clone();
         let task_normfs = normfs.clone();
         let task_gravity_normfs = normfs.clone();
+        let task_gravity_settings_normfs = normfs.clone();
 
         let inf = Arc::new(inference::Inference::new(
             motor_config,
@@ -79,16 +100,20 @@ pub async fn start<T: StationEngine>(
         ));
         let read_inf = inf.clone();
         let read_gravity_inf = inf.clone();
+        let read_gravity_settings_inf = inf.clone();
 
         // Clone references for the command handler closure
         let cmd_modes = modes.clone();
         let cmd_gravity_modes = gravity_modes.clone();
+        let cmd_gravity_settings = gravity_settings.clone();
         let cmd_inf = inf.clone();
         let cmd_normfs = normfs.clone();
         let cmd_rx_queue_id = rx_queue_id.clone();
+        let cmd_gravity_settings_queue_id = gravity_settings_queue_id.clone();
 
         let modes_queue_id_clone = modes_queue_id.clone();
         let rx_queue_id_for_mirror_restore = rx_queue_id.clone();
+        let gravity_settings_for_mirror_restore = gravity_settings.clone();
         tokio::spawn(async move {
             let mut read_modes = HashMap::new();
 
@@ -127,11 +152,13 @@ pub async fn start<T: StationEngine>(
 
             let mut current_modes = task_modes.write().unwrap();
             let mut current_gravity_modes = task_gravity_modes.write().unwrap();
+            let gravity_settings_snapshot = gravity_settings_for_mirror_restore.read().unwrap().clone();
             merge_modes(
                 &mut current_modes,
                 &read_modes,
                 &mut current_gravity_modes,
                 &HashMap::new(),
+                &gravity_settings_snapshot,
                 &read_inf,
                 &task_normfs,
                 &rx_queue_id_for_mirror_restore,
@@ -152,6 +179,7 @@ pub async fn start<T: StationEngine>(
         let modes_for_gravity_restore = modes.clone();
         let gravity_modes_for_gravity_restore = gravity_modes.clone();
         let rx_queue_id_for_gravity_restore = rx_queue_id.clone();
+        let gravity_settings_for_gravity_restore = gravity_settings.clone();
         tokio::spawn(async move {
             let mut read_gravity_modes = HashMap::new();
 
@@ -193,14 +221,95 @@ pub async fn start<T: StationEngine>(
 
             let mut current_modes = modes_for_gravity_restore.write().unwrap();
             let mut current_gravity_modes = gravity_modes_for_gravity_restore.write().unwrap();
+            let gravity_settings_snapshot = gravity_settings_for_gravity_restore.read().unwrap().clone();
             merge_modes(
                 &mut current_modes,
                 &HashMap::new(),
                 &mut current_gravity_modes,
                 &read_gravity_modes,
+                &gravity_settings_snapshot,
                 &read_gravity_inf,
                 &task_gravity_normfs,
                 &rx_queue_id_for_gravity_restore,
+                None,
+                None,
+            );
+        });
+
+        // Restore saved per-joint gains/torque limit on boot - safe to load
+        // unconditionally (unlike the mode restore above): this only
+        // populates displayed/pre-fill data, it never starts anything.
+        let gravity_settings_queue_id_clone = gravity_settings_queue_id.clone();
+        let modes_for_settings_restore = modes.clone();
+        let gravity_modes_for_settings_restore = gravity_modes.clone();
+        let gravity_settings_for_settings_restore = gravity_settings.clone();
+        let rx_queue_id_for_settings_restore = rx_queue_id.clone();
+        tokio::spawn(async move {
+            let mut read_settings = HashMap::new();
+
+            let (tx, mut rx) = mpsc::channel(1);
+
+            tokio::spawn(async move {
+                let _ = reading_gravity_settings_normfs
+                    .read(&gravity_settings_queue_id_clone, normfs::ReadPosition::ShiftFromTail(UintN::from(1024u64)), 1024, 1, tx)
+                    .await;
+            });
+
+            while let Some(entry) = rx.recv().await {
+                match GravityCompSettingsEnvelope::decode(entry.data) {
+                    Ok(envelope) => {
+                        if let Some(bus) = envelope.bus {
+                            let bus_id = bus.unique_id.clone();
+                            let bus_type = match mirroring::BusType::try_from(bus.r#type) {
+                                Ok(bt) => bt,
+                                Err(_) => continue,
+                            };
+
+                            if envelope.joint_gains_rad_per_nm.len() != 7 {
+                                log::warn!(
+                                    "Skipping gravity comp settings for bus {} with {} joint gains (expected 7)",
+                                    bus_id,
+                                    envelope.joint_gains_rad_per_nm.len()
+                                );
+                                continue;
+                            }
+
+                            let mut joint_gains = [0.0f64; 7];
+                            joint_gains.copy_from_slice(&envelope.joint_gains_rad_per_nm);
+
+                            read_settings.insert(
+                                BusKey { bus_id, bus_type },
+                                GravitySettings {
+                                    joint_gains,
+                                    torque_limit: envelope.torque_limit as u16,
+                                },
+                            );
+                        }
+                    }
+                    Err(e) => {
+                        log::error!("Error decoding gravity comp settings envelope at id {}: {:?}", entry.id, e);
+                    }
+                }
+            }
+
+            log::info!("Restored {} gravity comp settings from normfs", read_settings.len());
+
+            let mut current_settings = gravity_settings_for_settings_restore.write().unwrap();
+            for (key, value) in &read_settings {
+                current_settings.insert(key.clone(), *value);
+            }
+
+            let mut current_modes = modes_for_settings_restore.write().unwrap();
+            let mut current_gravity_modes = gravity_modes_for_settings_restore.write().unwrap();
+            merge_modes(
+                &mut current_modes,
+                &HashMap::new(),
+                &mut current_gravity_modes,
+                &HashMap::new(),
+                &current_settings,
+                &read_gravity_settings_inf,
+                &task_gravity_settings_normfs,
+                &rx_queue_id_for_settings_restore,
                 None,
                 None,
             );
@@ -214,9 +323,11 @@ pub async fn start<T: StationEngine>(
                         &pack,
                         &cmd_modes,
                         &cmd_gravity_modes,
+                        &cmd_gravity_settings,
                         &cmd_inf,
                         &cmd_normfs,
                         &cmd_rx_queue_id,
+                        &cmd_gravity_settings_queue_id,
                     );
                 }
             }
@@ -232,6 +343,7 @@ fn merge_modes(
         new_modes: &HashMap<BusKey, mirroring::BusMode>,
         gravity_current: &mut HashMap<BusKey, mirroring::GravityCompState>,
         new_gravity: &HashMap<BusKey, mirroring::GravityCompState>,
+        gravity_settings: &HashMap<BusKey, GravitySettings>,
         inference: &Inference,
         normfs: &Arc<NormFS>,
         rx_queue_id: &normfs::QueueId,
@@ -261,14 +373,18 @@ fn merge_modes(
             .clone()
             .into_iter()
             .map(|(key, value)| {
-                let gain_rad_per_nm = inference.get_gravity_comp_gain(&key);
+                let (joint_gains, torque_limit) = match gravity_settings.get(&key) {
+                    Some(settings) => (settings.joint_gains.to_vec(), Some(settings.torque_limit as u32)),
+                    None => (Vec::new(), None),
+                };
                 mirroring::GravityCompBusState {
                     id: Some(mirroring::MirroringBus {
                         unique_id: key.bus_id,
                         r#type: key.bus_type as i32,
                     }),
                     state: value as i32,
-                    gain_rad_per_nm,
+                    joint_gains_rad_per_nm: joint_gains,
+                    torque_limit,
                 }
             })
             .collect();
@@ -292,13 +408,16 @@ fn merge_modes(
         let _ = normfs.enqueue(rx_queue_id, rx_envelope.encode_to_vec().into());
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn process_command_pack(
         pack: &StationCommandsPack,
-        modes: &Arc<RwLock<HashMap<BusKey, mirroring::BusMode>>>,
-        gravity_modes: &Arc<RwLock<HashMap<BusKey, mirroring::GravityCompState>>>,
+        modes: &ModesMap,
+        gravity_modes: &GravityModesMap,
+        gravity_settings: &GravitySettingsMap,
         inference: &Arc<Inference>,
         normfs: &Arc<NormFS>,
         rx_queue_id: &normfs::QueueId,
+        gravity_settings_queue_id: &normfs::QueueId,
     ) {
         log::debug!("Received command pack: {:?}", pack.pack_id);
 
@@ -317,9 +436,9 @@ fn merge_modes(
                     };
 
                     if command.r#type == mirroring::CommandType::CtStopMirror as i32 {
-                        handle_stop_mirror(command, modes, gravity_modes, inference, normfs, rx_queue_id);
+                        handle_stop_mirror(command, modes, gravity_modes, gravity_settings, inference, normfs, rx_queue_id);
                     } else if command.r#type == mirroring::CommandType::CtStartMirror as i32 {
-                        handle_start_mirror(command, modes, gravity_modes, inference, normfs, rx_queue_id);
+                        handle_start_mirror(command, modes, gravity_modes, gravity_settings, inference, normfs, rx_queue_id);
                     }
                 }
                 station_iface::iface_proto::drivers::StationCommandType::StcGravityCompCommand => {
@@ -332,11 +451,15 @@ fn merge_modes(
                     };
 
                     if command.r#type == mirroring::GravityCompCommandType::GctStopGravityComp as i32 {
-                        handle_stop_gravity_comp(command, modes, gravity_modes, inference, normfs, rx_queue_id);
+                        handle_stop_gravity_comp(command, modes, gravity_modes, gravity_settings, inference, normfs, rx_queue_id);
                     } else if command.r#type == mirroring::GravityCompCommandType::GctStartGravityComp as i32 {
-                        handle_start_gravity_comp(command, modes, gravity_modes, inference, normfs, rx_queue_id);
+                        handle_start_gravity_comp(command, modes, gravity_modes, gravity_settings, inference, normfs, rx_queue_id);
                     } else if command.r#type == mirroring::GravityCompCommandType::GctSetGain as i32 {
-                        handle_set_gravity_comp_gain(command, modes, gravity_modes, inference, normfs, rx_queue_id);
+                        handle_set_gravity_comp_gain(command, modes, gravity_modes, gravity_settings, inference, normfs, rx_queue_id);
+                    } else if command.r#type == mirroring::GravityCompCommandType::GctSetTorqueLimit as i32 {
+                        handle_set_gravity_comp_torque_limit(command, modes, gravity_modes, gravity_settings, inference, normfs, rx_queue_id);
+                    } else if command.r#type == mirroring::GravityCompCommandType::GctSaveSettings as i32 {
+                        handle_save_gravity_comp_settings(command, gravity_settings, normfs, gravity_settings_queue_id);
                     }
                 }
                 _ => continue,
@@ -346,8 +469,9 @@ fn merge_modes(
 
     fn handle_stop_mirror(
         command: mirroring::Command,
-        modes: &Arc<RwLock<HashMap<BusKey, mirroring::BusMode>>>,
-        gravity_modes: &Arc<RwLock<HashMap<BusKey, mirroring::GravityCompState>>>,
+        modes: &ModesMap,
+        gravity_modes: &GravityModesMap,
+        gravity_settings: &GravitySettingsMap,
         inference: &Arc<Inference>,
         normfs: &Arc<NormFS>,
         rx_queue_id: &normfs::QueueId,
@@ -384,13 +508,15 @@ fn merge_modes(
 
         let mut modes_guard = modes.write().unwrap();
         let mut gravity_guard = gravity_modes.write().unwrap();
-        merge_modes(&mut modes_guard, &HashMap::new(), &mut gravity_guard, &HashMap::new(), inference, normfs, rx_queue_id, Some(command), None);
+        let gravity_settings_snapshot = gravity_settings.read().unwrap().clone();
+        merge_modes(&mut modes_guard, &HashMap::new(), &mut gravity_guard, &HashMap::new(), &gravity_settings_snapshot, inference, normfs, rx_queue_id, Some(command), None);
     }
 
     fn handle_start_mirror(
         command: mirroring::Command,
-        modes: &Arc<RwLock<HashMap<BusKey, mirroring::BusMode>>>,
-        gravity_modes: &Arc<RwLock<HashMap<BusKey, mirroring::GravityCompState>>>,
+        modes: &ModesMap,
+        gravity_modes: &GravityModesMap,
+        gravity_settings: &GravitySettingsMap,
         inference: &Arc<Inference>,
         normfs: &Arc<NormFS>,
         rx_queue_id: &normfs::QueueId,
@@ -462,7 +588,8 @@ fn merge_modes(
 
         let mut modes_guard = modes.write().unwrap();
         let mut gravity_guard = gravity_modes.write().unwrap();
-        merge_modes(&mut modes_guard, &new_modes, &mut gravity_guard, &HashMap::new(), inference, normfs, rx_queue_id, Some(command), None);
+        let gravity_settings_snapshot = gravity_settings.read().unwrap().clone();
+        merge_modes(&mut modes_guard, &new_modes, &mut gravity_guard, &HashMap::new(), &gravity_settings_snapshot, inference, normfs, rx_queue_id, Some(command), None);
     }
 
     fn decode_gravity_comp_bus(bus: &Option<mirroring::MirroringBus>) -> Option<BusKey> {
@@ -481,10 +608,22 @@ fn merge_modes(
         Some(BusKey { bus_id: bus.unique_id.clone(), bus_type })
     }
 
+    /// Gets or creates this bus's staged gravity settings entry, seeded from
+    /// the configured defaults if it doesn't exist yet.
+    fn ensure_gravity_settings(
+        gravity_settings: &GravitySettingsMap,
+        bus_key: &BusKey,
+        inference: &Inference,
+    ) -> GravitySettings {
+        let mut guard = gravity_settings.write().unwrap();
+        *guard.entry(bus_key.clone()).or_insert_with(|| inference.gravity_comp_defaults())
+    }
+
     fn handle_start_gravity_comp(
         command: mirroring::GravityCompCommand,
-        modes: &Arc<RwLock<HashMap<BusKey, mirroring::BusMode>>>,
-        gravity_modes: &Arc<RwLock<HashMap<BusKey, mirroring::GravityCompState>>>,
+        modes: &ModesMap,
+        gravity_modes: &GravityModesMap,
+        gravity_settings: &GravitySettingsMap,
         inference: &Arc<Inference>,
         normfs: &Arc<NormFS>,
         rx_queue_id: &normfs::QueueId,
@@ -497,18 +636,27 @@ fn merge_modes(
             }
         };
 
-        let initial_gain = command.gain_rad_per_nm;
-        log::info!("Starting gravity compensation for bus: {:?} (initial_gain={:?})", bus_key, initial_gain);
+        // Seed from whatever's already staged/saved for this bus (or the
+        // configured defaults if it's never been touched) rather than
+        // always resetting to config defaults on every start.
+        let settings = ensure_gravity_settings(gravity_settings, &bus_key, inference);
+        log::info!(
+            "Starting gravity compensation for bus: {:?} (gains={:?}, torque_limit={})",
+            bus_key,
+            settings.joint_gains,
+            settings.torque_limit
+        );
 
         let cb_modes = Arc::clone(modes);
         let cb_gravity_modes = Arc::clone(gravity_modes);
+        let cb_gravity_settings = Arc::clone(gravity_settings);
         let cb_inference = Arc::clone(inference);
         let cb_normfs = Arc::clone(normfs);
         let cb_rx_queue_id = rx_queue_id.clone();
 
-        inference.start_gravity_comp(bus_key.clone(), initial_gain, move |bus| {
+        inference.start_gravity_comp(bus_key.clone(), Some(settings.joint_gains), Some(settings.torque_limit), move |bus| {
             log::warn!("Gravity comp on bus {:?} self-stopped for safety; updating mode state", bus);
-            deactivate_gravity_comp(bus, &cb_modes, &cb_gravity_modes, &cb_inference, &cb_normfs, &cb_rx_queue_id, None);
+            deactivate_gravity_comp(bus, &cb_modes, &cb_gravity_modes, &cb_gravity_settings, &cb_inference, &cb_normfs, &cb_rx_queue_id, None);
         });
 
         let mut new_gravity = HashMap::new();
@@ -516,13 +664,15 @@ fn merge_modes(
 
         let mut modes_guard = modes.write().unwrap();
         let mut gravity_guard = gravity_modes.write().unwrap();
-        merge_modes(&mut modes_guard, &HashMap::new(), &mut gravity_guard, &new_gravity, inference, normfs, rx_queue_id, None, Some(command));
+        let gravity_settings_snapshot = gravity_settings.read().unwrap().clone();
+        merge_modes(&mut modes_guard, &HashMap::new(), &mut gravity_guard, &new_gravity, &gravity_settings_snapshot, inference, normfs, rx_queue_id, None, Some(command));
     }
 
     fn handle_stop_gravity_comp(
         command: mirroring::GravityCompCommand,
-        modes: &Arc<RwLock<HashMap<BusKey, mirroring::BusMode>>>,
-        gravity_modes: &Arc<RwLock<HashMap<BusKey, mirroring::GravityCompState>>>,
+        modes: &ModesMap,
+        gravity_modes: &GravityModesMap,
+        gravity_settings: &GravitySettingsMap,
         inference: &Arc<Inference>,
         normfs: &Arc<NormFS>,
         rx_queue_id: &normfs::QueueId,
@@ -536,16 +686,20 @@ fn merge_modes(
         };
 
         log::info!("Stopping gravity compensation for bus: {:?}", bus_key);
-        deactivate_gravity_comp(bus_key, modes, gravity_modes, inference, normfs, rx_queue_id, Some(command));
+        deactivate_gravity_comp(bus_key, modes, gravity_modes, gravity_settings, inference, normfs, rx_queue_id, Some(command));
     }
 
-    /// Live-updates the gain of an already-running gravity-comp task (e.g.
-    /// from a UI slider), without restarting it. No-op (logged) if gravity
-    /// comp isn't running on the given bus, or if the command has no gain.
+    /// Live-updates the gain of one arm joint on an already-running
+    /// gravity-comp task (e.g. from a table cell in the UI), without
+    /// restarting it. Always updates the staged settings (so the value is
+    /// remembered/shown even if not currently running); only actually
+    /// re-applies it to hardware if gravity comp is running on this bus.
+    #[allow(clippy::too_many_arguments)]
     fn handle_set_gravity_comp_gain(
         command: mirroring::GravityCompCommand,
-        modes: &Arc<RwLock<HashMap<BusKey, mirroring::BusMode>>>,
-        gravity_modes: &Arc<RwLock<HashMap<BusKey, mirroring::GravityCompState>>>,
+        modes: &ModesMap,
+        gravity_modes: &GravityModesMap,
+        gravity_settings: &GravitySettingsMap,
         inference: &Arc<Inference>,
         normfs: &Arc<NormFS>,
         rx_queue_id: &normfs::QueueId,
@@ -558,6 +712,14 @@ fn merge_modes(
             }
         };
 
+        let motor_id = match command.motor_id {
+            Some(id) if (1..=7).contains(&id) => id as u8,
+            _ => {
+                log::warn!("Gravity comp set-gain command for bus {:?} missing/invalid motor_id", bus_key);
+                return;
+            }
+        };
+
         let gain = match command.gain_rad_per_nm {
             Some(gain) => gain,
             None => {
@@ -566,18 +728,127 @@ fn merge_modes(
             }
         };
 
-        if !inference.set_gravity_comp_gain(&bus_key, gain) {
-            log::warn!("Gravity comp set-gain for bus {:?} ignored: not currently running", bus_key);
-            return;
+        let clamped_gain = clamp_gravity_comp_gain(gain);
+        {
+            let mut settings = ensure_gravity_settings(gravity_settings, &bus_key, inference);
+            settings.joint_gains[(motor_id - 1) as usize] = clamped_gain;
+            gravity_settings.write().unwrap().insert(bus_key.clone(), settings);
         }
 
-        log::info!("Gravity comp gain for bus {:?} set to {}", bus_key, gain);
+        let applied_live = inference.set_gravity_comp_gain(&bus_key, motor_id, gain);
+        log::info!(
+            "Gravity comp gain for bus {:?} motor {} set to {} (applied_live={})",
+            bus_key,
+            motor_id,
+            clamped_gain,
+            applied_live
+        );
 
         // No mode transition here, but re-broadcast so the new gain shows up
         // in InferenceState.gravity_comp for any connected UI.
         let mut modes_guard = modes.write().unwrap();
         let mut gravity_guard = gravity_modes.write().unwrap();
-        merge_modes(&mut modes_guard, &HashMap::new(), &mut gravity_guard, &HashMap::new(), inference, normfs, rx_queue_id, None, Some(command));
+        let gravity_settings_snapshot = gravity_settings.read().unwrap().clone();
+        merge_modes(&mut modes_guard, &HashMap::new(), &mut gravity_guard, &HashMap::new(), &gravity_settings_snapshot, inference, normfs, rx_queue_id, None, Some(command));
+    }
+
+    /// Live-updates the torque limit (all 7 arm motors) for an already-running
+    /// gravity-comp task, without restarting it. Same staged-vs-live handling
+    /// as `handle_set_gravity_comp_gain` above.
+    #[allow(clippy::too_many_arguments)]
+    fn handle_set_gravity_comp_torque_limit(
+        command: mirroring::GravityCompCommand,
+        modes: &ModesMap,
+        gravity_modes: &GravityModesMap,
+        gravity_settings: &GravitySettingsMap,
+        inference: &Arc<Inference>,
+        normfs: &Arc<NormFS>,
+        rx_queue_id: &normfs::QueueId,
+    ) {
+        let bus_key = match decode_gravity_comp_bus(&command.bus) {
+            Some(bus_key) => bus_key,
+            None => {
+                log::warn!("Gravity comp set-torque-limit command missing or invalid bus");
+                return;
+            }
+        };
+
+        let torque_limit = match command.torque_limit {
+            Some(t) => t as u16,
+            None => {
+                log::warn!("Gravity comp set-torque-limit command for bus {:?} missing torque_limit value", bus_key);
+                return;
+            }
+        };
+
+        let clamped = clamp_gravity_comp_torque_limit(torque_limit);
+        {
+            let mut settings = ensure_gravity_settings(gravity_settings, &bus_key, inference);
+            settings.torque_limit = clamped;
+            gravity_settings.write().unwrap().insert(bus_key.clone(), settings);
+        }
+
+        let applied_live = inference.set_gravity_comp_torque_limit(&bus_key, torque_limit);
+        log::info!(
+            "Gravity comp torque limit for bus {:?} set to {} (applied_live={})",
+            bus_key,
+            clamped,
+            applied_live
+        );
+
+        let mut modes_guard = modes.write().unwrap();
+        let mut gravity_guard = gravity_modes.write().unwrap();
+        let gravity_settings_snapshot = gravity_settings.read().unwrap().clone();
+        merge_modes(&mut modes_guard, &HashMap::new(), &mut gravity_guard, &HashMap::new(), &gravity_settings_snapshot, inference, normfs, rx_queue_id, None, Some(command));
+    }
+
+    /// Persists this bus's current staged gravity-comp settings (per-joint
+    /// gains + torque limit) to the `motors_mirroring/gravity_comp_settings`
+    /// queue, so they're restored as the defaults next time gravity comp is
+    /// started on this bus - even across a station restart. No-op (logged)
+    /// if there's nothing staged yet for this bus.
+    fn handle_save_gravity_comp_settings(
+        command: mirroring::GravityCompCommand,
+        gravity_settings: &GravitySettingsMap,
+        normfs: &Arc<NormFS>,
+        gravity_settings_queue_id: &normfs::QueueId,
+    ) {
+        let bus_key = match decode_gravity_comp_bus(&command.bus) {
+            Some(bus_key) => bus_key,
+            None => {
+                log::warn!("Gravity comp save-settings command missing or invalid bus");
+                return;
+            }
+        };
+
+        let settings = gravity_settings.read().unwrap().get(&bus_key).copied();
+        let settings = match settings {
+            Some(settings) => settings,
+            None => {
+                log::warn!("Gravity comp save-settings for bus {:?} ignored: nothing staged yet", bus_key);
+                return;
+            }
+        };
+
+        let envelope = mirroring::GravityCompSettingsEnvelope {
+            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
+            local_stamp_ns: systime::get_local_stamp_ns(),
+            app_start_id: systime::get_app_start_id(),
+            bus: Some(mirroring::MirroringBus {
+                unique_id: bus_key.bus_id.clone(),
+                r#type: bus_key.bus_type as i32,
+            }),
+            joint_gains_rad_per_nm: settings.joint_gains.to_vec(),
+            torque_limit: settings.torque_limit as u32,
+        };
+
+        let _ = normfs.enqueue(gravity_settings_queue_id, envelope.encode_to_vec().into());
+        log::info!(
+            "Saved gravity comp settings for bus {:?}: gains={:?}, torque_limit={}",
+            bus_key,
+            settings.joint_gains,
+            settings.torque_limit
+        );
     }
 
     /// Shared teardown path for both an operator-issued stop command and a
@@ -585,10 +856,12 @@ fn merge_modes(
     /// overcurrent) - both must converge on the same task-registry cleanup
     /// and mode broadcast so displayed state never drifts from what's
     /// actually running.
+    #[allow(clippy::too_many_arguments)]
     fn deactivate_gravity_comp(
         bus_key: BusKey,
-        modes: &Arc<RwLock<HashMap<BusKey, mirroring::BusMode>>>,
-        gravity_modes: &Arc<RwLock<HashMap<BusKey, mirroring::GravityCompState>>>,
+        modes: &ModesMap,
+        gravity_modes: &GravityModesMap,
+        gravity_settings: &GravitySettingsMap,
         inference: &Arc<Inference>,
         normfs: &Arc<NormFS>,
         rx_queue_id: &normfs::QueueId,
@@ -601,5 +874,6 @@ fn merge_modes(
 
         let mut modes_guard = modes.write().unwrap();
         let mut gravity_guard = gravity_modes.write().unwrap();
-        merge_modes(&mut modes_guard, &HashMap::new(), &mut gravity_guard, &new_gravity, inference, normfs, rx_queue_id, None, command);
+        let gravity_settings_snapshot = gravity_settings.read().unwrap().clone();
+        merge_modes(&mut modes_guard, &HashMap::new(), &mut gravity_guard, &new_gravity, &gravity_settings_snapshot, inference, normfs, rx_queue_id, None, command);
     }
