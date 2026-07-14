@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Station arm viewer (basic)</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #111; color: #eee; font: 14px/1.4 monospace; }
+  #topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 2; display: flex; gap: 8px; align-items: center;
+            padding: 8px 12px; background: #1b1b1b; border-bottom: 1px solid #333; }
+  #topbar input { background: #222; color: #eee; border: 1px solid #444; padding: 4px 6px; width: 220px; }
+  #topbar button { background: #2a5; color: #fff; border: 0; padding: 5px 12px; cursor: pointer; }
+  #topbar button:disabled { background: #444; cursor: default; }
+  #status { padding: 2px 8px; border-radius: 3px; }
+  #status.disconnected { background: #533; }
+  #status.connecting { background: #553; }
+  #status.connected { background: #353; }
+  #panel { position: fixed; top: 46px; left: 0; bottom: 0; width: 260px; overflow: auto; z-index: 2;
+           background: rgba(20,20,20,0.85); padding: 10px 12px; border-right: 1px solid #333; }
+  #panel h3 { margin: 6px 0 4px; font-size: 12px; color: #9c9; text-transform: uppercase; }
+  #panel table { width: 100%; border-collapse: collapse; }
+  #panel td { padding: 2px 4px; border-bottom: 1px solid #262626; }
+  #canvas-wrap { position: fixed; inset: 0; }
+  canvas { display: block; }
+  #log { position: fixed; bottom: 0; left: 260px; right: 0; z-index: 2; max-height: 90px; overflow: auto;
+         background: rgba(0,0,0,0.6); padding: 4px 8px; font-size: 12px; color: #999; }
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <label>Station: <input id="host" type="text" /></label>
+  <button id="connectBtn">Connect</button>
+  <span id="status" class="disconnected">disconnected</span>
+  <span id="frameInfo"></span>
+</div>
+
+<div id="panel"><em>not connected</em></div>
+<div id="canvas-wrap"></div>
+<div id="log"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/protobufjs@7.4.0/dist/protobuf.min.js"></script>
+<script type="module">
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+
+const hostInput = document.getElementById("host");
+const connectBtn = document.getElementById("connectBtn");
+const statusEl = document.getElementById("status");
+const frameInfoEl = document.getElementById("frameInfo");
+const panelEl = document.getElementById("panel");
+const logEl = document.getElementById("log");
+
+hostInput.value = `${location.hostname || "localhost"}:8889`;
+
+function log(msg) {
+  const line = document.createElement("div");
+  line.textContent = `${new Date().toLocaleTimeString()} - ${msg}`;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+  console.log(msg);
+}
+
+function setStatus(text, cls) {
+  statusEl.textContent = text;
+  statusEl.className = cls;
+}
+
+// --- Register handling of the two proto files we care about (self-contained, no imports) ---
+async function loadProtos() {
+  const root = new protobuf.Root();
+  const [normfsSrc, st3215Src] = await Promise.all([
+    fetch("./normfs.proto").then((r) => r.text()),
+    fetch("./st3215.proto").then((r) => r.text()),
+  ]);
+  protobuf.parse(normfsSrc, root, { keepCase: true });
+  protobuf.parse(st3215Src, root, { keepCase: true });
+  return {
+    ClientRequest: root.lookupType("normfs.ClientRequest"),
+    ServerResponse: root.lookupType("normfs.ServerResponse"),
+    InferenceState: root.lookupType("st3215.InferenceState"),
+  };
+}
+
+// ReadResponse.Result / OffsetType enum values, hardcoded to match normfs.proto.
+const RR = { START: 0, ENTRY: 1, END: 2, QUEUE_NOT_FOUND: 3, NOT_FOUND: 4, SERVER_ERROR: 5 };
+const OFFSET_TYPE = { ABSOLUTE: 0, SHIFT_FROM_TAIL: 1 };
+
+const QUEUE_ID = "st3215/inference";
+const PRESENT_POSITION_ADDR = 0x38;
+const MAX_ANGLE_STEP = 4095;
+const SIGN_BIT_MASK = 0x8000;
+
+function normalPosition(raw) {
+  if (raw & SIGN_BIT_MASK) {
+    const magnitude = raw & MAX_ANGLE_STEP;
+    return (MAX_ANGLE_STEP + 1 - magnitude) & MAX_ANGLE_STEP;
+  }
+  return raw & MAX_ANGLE_STEP;
+}
+
+function motorPosition(stateBytes) {
+  if (!stateBytes || stateBytes.length < PRESENT_POSITION_ADDR + 2) return 0;
+  const view = new DataView(stateBytes.buffer, stateBytes.byteOffset, stateBytes.byteLength);
+  const raw = view.getUint16(PRESENT_POSITION_ADDR, true); // little-endian
+  return normalPosition(raw);
+}
+
+// --- Three.js scene: one cube per motor, rotated to reflect its raw position ---
+let scene, camera, renderer, cubes = [];
+
+function initScene() {
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x111111);
+
+  camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+  camera.position.set(0, 4, 12);
+  camera.lookAt(0, 0, 0);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.getElementById("canvas-wrap").appendChild(renderer.domElement);
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+  const dir = new THREE.DirectionalLight(0xffffff, 1);
+  dir.position.set(5, 10, 7);
+  scene.add(dir);
+
+  window.addEventListener("resize", () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  animate();
+}
+
+function ensureCubes(count) {
+  while (cubes.length < count) {
+    const geo = new THREE.BoxGeometry(1, 1, 1);
+    const mat = new THREE.MeshStandardMaterial({ color: 0x4488ff });
+    const cube = new THREE.Mesh(geo, mat);
+    const i = cubes.length;
+    cube.position.x = (i - (count - 1) / 2) * 1.8;
+    scene.add(cube);
+    cubes.push(cube);
+  }
+  while (cubes.length > count) {
+    const cube = cubes.pop();
+    scene.remove(cube);
+  }
+  // Re-space evenly whenever the count changes.
+  cubes.forEach((cube, i) => {
+    cube.position.x = (i - (cubes.length - 1) / 2) * 1.8;
+  });
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  renderer.render(scene, camera);
+}
+
+function renderFrame(inferenceState) {
+  const buses = inferenceState.buses || [];
+  const rows = [];
+  const allMotors = [];
+
+  for (const bus of buses) {
+    const serial = bus.bus ? bus.bus.serial_number : "?";
+    const motors = bus.motors || [];
+    rows.push(`<h3>bus ${serial}</h3><table>`);
+    for (const motor of motors) {
+      const pos = motorPosition(motor.state);
+      rows.push(`<tr><td>#${motor.id}</td><td>${pos}</td></tr>`);
+      allMotors.push({ id: motor.id, pos });
+    }
+    rows.push("</table>");
+  }
+  panelEl.innerHTML = rows.join("") || "<em>no buses</em>";
+
+  ensureCubes(allMotors.length);
+  allMotors.forEach((m, i) => {
+    cubes[i].rotation.y = (m.pos / (MAX_ANGLE_STEP + 1)) * Math.PI * 2;
+  });
+}
+
+// --- WebSocket / NormFS protocol plumbing ---
+let ws = null;
+let proto = null;
+let nextReadId = 1;
+let frameCount = 0;
+let lastFrameAt = 0;
+
+function sendClientRequest(payload) {
+  const msg = proto.ClientRequest.create(payload);
+  const buf = proto.ClientRequest.encode(msg).finish();
+  ws.send(buf);
+}
+
+function followQueue(queueId) {
+  const readId = nextReadId++;
+  sendClientRequest({
+    read: {
+      read_id: readId,
+      queue_id: queueId,
+      offset: { id: { raw: new Uint8Array([0]) }, type: OFFSET_TYPE.SHIFT_FROM_TAIL },
+      limit: 0,
+      step: 1,
+    },
+  });
+}
+
+async function connect() {
+  connectBtn.disabled = true;
+  setStatus("connecting", "connecting");
+
+  if (!proto) {
+    log("Loading normfs.proto / st3215.proto...");
+    proto = await loadProtos();
+  }
+
+  const url = `ws://${hostInput.value}/api`;
+  log(`Connecting to ${url}...`);
+  ws = new WebSocket(url);
+  ws.binaryType = "arraybuffer";
+
+  ws.onopen = () => {
+    log("WebSocket open, sending setup request...");
+    sendClientRequest({ setup: { version: 1 } });
+  };
+
+  ws.onmessage = (event) => {
+    const resp = proto.ServerResponse.decode(new Uint8Array(event.data));
+
+    if (resp.setup) {
+      log(`Setup ok (server version ${resp.setup.version})`);
+      setStatus("connected", "connected");
+      connectBtn.disabled = false;
+      connectBtn.textContent = "Disconnect";
+      followQueue(QUEUE_ID);
+      return;
+    }
+
+    if (resp.read) {
+      switch (resp.read.result) {
+        case RR.START:
+          log(`Following ${QUEUE_ID}...`);
+          break;
+        case RR.ENTRY: {
+          const state = proto.InferenceState.decode(resp.read.data);
+          frameCount++;
+          const now = performance.now();
+          const fps = lastFrameAt ? (1000 / (now - lastFrameAt)).toFixed(1) : "-";
+          lastFrameAt = now;
+          frameInfoEl.textContent = `frames=${frameCount} last_dt_fps=${fps}`;
+          renderFrame(state);
+          break;
+        }
+        case RR.QUEUE_NOT_FOUND:
+          log(`Queue not found: ${QUEUE_ID} (is the st3215 driver enabled on the station?)`);
+          break;
+        case RR.SERVER_ERROR:
+          log("Server error while reading queue");
+          break;
+        default:
+          break;
+      }
+    }
+  };
+
+  ws.onerror = (e) => {
+    log("WebSocket error");
+  };
+
+  ws.onclose = () => {
+    log("WebSocket closed");
+    setStatus("disconnected", "disconnected");
+    connectBtn.disabled = false;
+    connectBtn.textContent = "Connect";
+  };
+}
+
+function disconnect() {
+  if (ws) ws.close();
+}
+
+connectBtn.addEventListener("click", () => {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    disconnect();
+  } else {
+    connect();
+  }
+});
+
+initScene();
+</script>
+</body>
+</html>
