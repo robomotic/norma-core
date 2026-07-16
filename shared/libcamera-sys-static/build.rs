@@ -33,11 +33,15 @@ fn main() -> Result<(), Box<dyn Error>> {
     // pkg-config's paths for a genuine native build against a system
     // libcamera-dev install (e.g. apt-installed on a Pi), where
     // LIBCAMERA_LIB_DIR won't be set.
+    // libcamera's own meson.build installs public headers under
+    // <includedir>/libcamera/libcamera/*.h (yes, "libcamera" twice), so the
+    // -I path needs that extra segment for `#include <libcamera/foo.h>` to
+    // resolve.
     let vendored_include_dir = env::var("LIBCAMERA_LIB_DIR").ok().and_then(|lib_dir| {
         Path::new(&lib_dir)
             .parent()
             .and_then(Path::parent)
-            .map(|usr| usr.join("include"))
+            .map(|usr| usr.join("include").join("libcamera"))
     });
     let include_paths: Vec<PathBuf> = match &vendored_include_dir {
         Some(dir) => vec![dir.clone()],

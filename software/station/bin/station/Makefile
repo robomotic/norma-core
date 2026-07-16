@@ -2,7 +2,6 @@
 
 # Configuration
 TARGET_ARM64_BASE := aarch64-unknown-linux-gnu
-TARGET_ARM64_GLIBC_236 := $(TARGET_ARM64_BASE).2.36
 TARGET_AMD64 := x86_64-unknown-linux-gnu
 
 # Use rustup-managed rustc (Homebrew rustc lacks cross-compilation targets)
@@ -14,9 +13,6 @@ OUTPUT_DIR_AMD64 := target/$(TARGET_AMD64)/release
 PACKAGE := station
 WORKSPACE_ROOT := $(shell cd ../../../.. && pwd)
 LIBCAMERA_VERSION ?= 0.7.0
-LIBCAMERA_INSTALL_DIR := $(WORKSPACE_ROOT)/shared/libcamera/library/$(LIBCAMERA_VERSION)
-LIBCAMERA_LIB_DIR := $(LIBCAMERA_INSTALL_DIR)/usr/lib/aarch64-linux-gnu
-LIBCAMERA_PKG_CONFIG_PATH := $(LIBCAMERA_LIB_DIR)/pkgconfig
 
 # Build flags
 FEATURES ?=
@@ -31,14 +27,30 @@ CARGO_FLAGS := --release --package=$(PACKAGE) $(CARGO_FEATURES)
 
 HAS_LIBCAMERA := $(filter ov5647,$(FEATURES_EXPANDED))
 HAS_YAHBOOM_DOGZILLA_LITE := $(filter yahboom-dogzilla-lite,$(FEATURES_EXPANDED))
+
+# GLIBC selects which Raspberry Pi OS / Debian release the ARM64 build
+# targets, by choosing both the zigbuild glibc-versioned target and which
+# vendored libcamera artifacts to link (each built from a matching base
+# image - see shared/libcamera/Makefile - so the resulting binary only
+# requires glibc symbols the target OS actually has):
+#   2.36 (default when the dogzilla-lite feature is on) - Raspberry Pi OS 5 / Debian Bookworm
+#   2.31                                                  - Raspberry Pi OS 4 / Debian Bullseye
+GLIBC ?= $(if $(HAS_YAHBOOM_DOGZILLA_LITE),2.36,)
+LIBCAMERA_VARIANT_2.36 := bookworm
+LIBCAMERA_VARIANT_2.31 := bullseye
+LIBCAMERA_VARIANT := $(LIBCAMERA_VARIANT_$(GLIBC))
+LIBCAMERA_DIR_SUFFIX := $(if $(LIBCAMERA_VARIANT),-$(LIBCAMERA_VARIANT),)
+LIBCAMERA_INSTALL_DIR := $(WORKSPACE_ROOT)/shared/libcamera/library/$(LIBCAMERA_VERSION)$(LIBCAMERA_DIR_SUFFIX)
+LIBCAMERA_LIB_DIR := $(LIBCAMERA_INSTALL_DIR)/usr/lib/aarch64-linux-gnu
+LIBCAMERA_PKG_CONFIG_PATH := $(LIBCAMERA_LIB_DIR)/pkgconfig
+
 LIBCAMERA_ENV := \
 	PKG_CONFIG_PATH=$(LIBCAMERA_PKG_CONFIG_PATH) \
 	PKG_CONFIG_ALLOW_CROSS=1 \
 	LIBCAMERA_LIB_DIR=$(LIBCAMERA_LIB_DIR)
 BUILD_ENV := $(if $(HAS_LIBCAMERA),$(LIBCAMERA_ENV),)
 
-# Target glibc 2.36 (Raspberry Pi OS 5 / Debian Bookworm) only for Yahboom Dogzilla Lite.
-TARGET_ARM64 := $(if $(HAS_YAHBOOM_DOGZILLA_LITE),$(TARGET_ARM64_GLIBC_236),$(TARGET_ARM64_BASE))
+TARGET_ARM64 := $(if $(GLIBC),$(TARGET_ARM64_BASE).$(GLIBC),$(TARGET_ARM64_BASE))
 
 .PHONY: all build client build-macos build-arm64 build-amd64 clean help
 
