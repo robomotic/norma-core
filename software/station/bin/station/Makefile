@@ -26,16 +26,10 @@ CARGO_FEATURES := $(if $(FEATURES_UNIQUE),--features $(FEATURES_UNIQUE),)
 CARGO_FLAGS := --release --package=$(PACKAGE) $(CARGO_FEATURES)
 
 HAS_LIBCAMERA := $(filter ov5647,$(FEATURES_EXPANDED))
-HAS_YAHBOOM_DOGZILLA_LITE := $(filter yahboom-dogzilla-lite,$(FEATURES_EXPANDED))
 
-# GLIBC selects which Raspberry Pi OS / Debian release the ARM64 build
-# targets, by choosing both the zigbuild glibc-versioned target and which
-# vendored libcamera artifacts to link (each built from a matching base
-# image - see shared/libcamera/Makefile - so the resulting binary only
-# requires glibc symbols the target OS actually has):
-#   2.36 (default when the dogzilla-lite feature is on) - Raspberry Pi OS 5 / Debian Bookworm
-#   2.31                                                  - Raspberry Pi OS 4 / Debian Bullseye
-GLIBC ?= $(if $(HAS_YAHBOOM_DOGZILLA_LITE),2.36,)
+# 2.36 (default when ov5647 is on) = Raspberry Pi OS 5 / Debian Bookworm
+# 2.31 = Raspberry Pi OS 4 / Debian Bullseye
+GLIBC ?= $(if $(HAS_LIBCAMERA),2.36,)
 LIBCAMERA_VARIANT_2.36 := bookworm
 LIBCAMERA_VARIANT_2.31 := bullseye
 LIBCAMERA_VARIANT := $(LIBCAMERA_VARIANT_$(GLIBC))

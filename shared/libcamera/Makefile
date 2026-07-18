@@ -1,11 +1,8 @@
 # Makefile for building libcamera shared library for station drivers.
 #
-# LIBCAMERA_VARIANT selects which glibc baseline the vendored .so files are
-# built against, by choosing the Debian base image the build runs inside
-# (compiling inside e.g. debian:bookworm-slim yields binaries that only
-# require symbols up to bookworm's glibc, unlike building inside a newer
-# image like trixie and expecting it to run on an older target):
-#   trixie   (default) - whatever glibc ships in debian:trixie-slim
+# LIBCAMERA_VARIANT selects the Debian base image to build inside, which
+# determines the glibc baseline the resulting .so files require:
+#   trixie   (default) - debian:trixie-slim
 #   bookworm            - glibc 2.36, Raspberry Pi OS / Debian 12
 #   bullseye             - glibc 2.31, Raspberry Pi OS / Debian 11
 

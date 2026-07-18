@@ -24,64 +24,83 @@ on:
         type: string
         default: ""
 
+concurrency:
+  group: station-release
+
 env:
   NODE_VERSION: "22"
 
 jobs:
-  determine-version:
-    name: Determine release version
+  setup:
+    name: Resolve release configuration
     runs-on: ubuntu-latest
     outputs:
-      tag: ${{ steps.tag.outputs.tag }}
+      tag: ${{ steps.resolve.outputs.tag }}
+      features: ${{ steps.resolve.outputs.features }}
+      glibc: ${{ steps.resolve.outputs.glibc }}
+      variant: ${{ steps.resolve.outputs.variant }}
+      needs_libcamera: ${{ steps.resolve.outputs.needs_libcamera }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Compute release tag
-        id: tag
+      - name: Resolve release configuration
+        id: resolve
         env:
+          VERSION: ${{ inputs.version }}
           FEATURES: ${{ inputs.features }}
           GLIBC: ${{ inputs.glibc }}
         run: |
-          if [ -n "${{ inputs.version }}" ]; then
-            TAG="${{ inputs.version }}"
+          features="$FEATURES"
+          case ",$features," in
+            *,yahboom-dogzilla-lite,*)
+              case ",$features," in
+                *,ov5647,*) ;;
+                *) features="$features,ov5647" ;;
+              esac
+              ;;
+          esac
+
+          needs_libcamera=false
+          glibc="$GLIBC"
+          variant=""
+          case ",$features," in
+            *,ov5647,*)
+              needs_libcamera=true
+              glibc="${glibc:-2.36}"
+              case "$glibc" in
+                2.36) variant=bookworm ;;
+                2.31) variant=bullseye ;;
+                *) echo "::error::ov5647 requires glibc=2.36 or glibc=2.31 (got '$glibc')"; exit 1 ;;
+              esac
+              ;;
+          esac
+
+          if [ -n "$VERSION" ]; then
+            tag="$VERSION"
           else
-            # github.run_number auto-increments on every dispatch of this
-            # workflow, so a blank input always produces a fresh, unique tag
-            # without anyone having to remember the last one used.
-            BASE_VERSION=$(grep -m1 '^version' Cargo.toml | sed -E 's/version = "(.*)"/\1/')
-
-            SUFFIX=""
-            case ",$FEATURES," in
-              *,yahboom-dogzilla-lite,*)
-                SUFFIX="-dogzilla"
-                # Bookworm (glibc 2.36) is the implied default when
-                # yahboom-dogzilla-lite is selected without an explicit
-                # glibc, so it's left off the tag; only Bullseye is called
-                # out, to keep the common case's tag short.
-                if [ "$GLIBC" = "2.31" ]; then
-                  SUFFIX="$SUFFIX-bullseye"
-                fi
-                ;;
-            esac
-
-            TAG="v${BASE_VERSION}${SUFFIX}-${{ github.run_number }}"
+            base_version=$(grep -m1 '^version' Cargo.toml | sed -E 's/version = "(.*)"/\1/')
+            suffix=""
+            if [ "$needs_libcamera" = "true" ]; then
+              suffix="-dogzilla"
+              if [ "$glibc" = "2.31" ]; then
+                suffix="$suffix-bullseye"
+              fi
+            fi
+            tag="v${base_version}${suffix}-${{ github.run_number }}"
           fi
-          echo "Resolved release tag: $TAG"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
-  # Builds libcamera from source (Raspberry Pi's fork) for the requested
-  # Debian base, matching the exact glibc baseline that arm64 target needs -
-  # see shared/libcamera/Makefile. Runs on GitHub's native arm64 hosted
-  # runners rather than emulating arm64 via QEMU on an x86_64 runner, so the
-  # meson/ninja build runs at full native speed. Only runs at all when the
-  # release actually needs libcamera (yahboom-dogzilla-lite implies ov5647).
+          echo "Resolved release tag: $tag"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "features=$features" >> "$GITHUB_OUTPUT"
+          echo "glibc=$glibc" >> "$GITHUB_OUTPUT"
+          echo "variant=$variant" >> "$GITHUB_OUTPUT"
+          echo "needs_libcamera=$needs_libcamera" >> "$GITHUB_OUTPUT"
+
   build-libcamera:
-    name: Build libcamera (${{ matrix.variant }})
-    if: contains(inputs.features, 'yahboom-dogzilla-lite')
-    strategy:
-      matrix:
-        variant: [bookworm, bullseye]
+    name: Build libcamera (${{ needs.setup.outputs.variant }})
+    needs: setup
+    if: needs.setup.outputs.needs_libcamera == 'true'
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout repository
@@ -90,26 +109,22 @@ jobs:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Keyed on everything that affects the built output, so an unrelated
-      # release (e.g. a plain gravity-comp build with a different features
-      # input never reaches this job at all, but a repeat dogzilla release
-      # with none of these inputs changed can skip straight to upload).
       - name: Cache built libcamera
         id: cache
         uses: actions/cache@v4
         with:
-          path: shared/libcamera/library/0.7.0-${{ matrix.variant }}
-          key: libcamera-0.7.0-${{ matrix.variant }}-${{ hashFiles('shared/libcamera/Dockerfile', 'shared/libcamera/build.sh', 'shared/libcamera/Makefile', 'shared/libcamera-sys-static/wrapper.cpp', 'shared/libcamera-sys-static/wrapper.hpp') }}
+          path: shared/libcamera/library/0.7.0-${{ needs.setup.outputs.variant }}
+          key: libcamera-0.7.0-${{ needs.setup.outputs.variant }}-${{ hashFiles('shared/libcamera/Dockerfile', 'shared/libcamera/build.sh', 'shared/libcamera/Makefile', 'shared/libcamera-sys-static/wrapper.cpp', 'shared/libcamera-sys-static/wrapper.hpp') }}
 
       - name: Build libcamera
         if: steps.cache.outputs.cache-hit != 'true'
-        run: make -C shared/libcamera build-libcamera LIBCAMERA_VARIANT=${{ matrix.variant }}
+        run: make -C shared/libcamera build-libcamera LIBCAMERA_VARIANT=${{ needs.setup.outputs.variant }}
 
       - name: Upload libcamera artifact
         uses: actions/upload-artifact@v4
         with:
-          name: libcamera-${{ matrix.variant }}
-          path: shared/libcamera/library/0.7.0-${{ matrix.variant }}
+          name: libcamera-${{ needs.setup.outputs.variant }}
+          path: shared/libcamera/library/0.7.0-${{ needs.setup.outputs.variant }}
 
   build-frontend:
     name: Build station-viewer frontend
@@ -142,10 +157,7 @@ jobs:
 
   build-linux:
     name: Build Linux binaries (amd64 + arm64)
-    needs: [build-frontend, build-libcamera]
-    # build-libcamera legitimately skips itself (via its own `if:`) for any
-    # release that doesn't request yahboom-dogzilla-lite - that must not
-    # skip this job too, only an actual libcamera build failure should.
+    needs: [setup, build-frontend, build-libcamera]
     if: |
       always() &&
       needs.build-frontend.result == 'success' &&
@@ -161,31 +173,12 @@ jobs:
           name: station-viewer-dist
           path: software/station/clients/station-viewer/dist
 
-      - name: Resolve libcamera variant
-        id: libcamera
-        env:
-          FEATURES: ${{ inputs.features }}
-          GLIBC: ${{ inputs.glibc }}
-        run: |
-          variant=""
-          case ",$FEATURES," in
-            *,yahboom-dogzilla-lite,*)
-              glibc="${GLIBC:-2.36}"
-              case "$glibc" in
-                2.36) variant=bookworm ;;
-                2.31) variant=bullseye ;;
-                *) echo "::error::ov5647/yahboom-dogzilla-lite requires glibc=2.36 or glibc=2.31 (got '$glibc')"; exit 1 ;;
-              esac
-              ;;
-          esac
-          echo "variant=$variant" >> "$GITHUB_OUTPUT"
-
-      - name: Download built libcamera (${{ steps.libcamera.outputs.variant }})
-        if: steps.libcamera.outputs.variant != ''
+      - name: Download built libcamera (${{ needs.setup.outputs.variant }})
+        if: needs.setup.outputs.needs_libcamera == 'true'
         uses: actions/download-artifact@v4
         with:
-          name: libcamera-${{ steps.libcamera.outputs.variant }}
-          path: shared/libcamera/library/0.7.0-${{ steps.libcamera.outputs.variant }}
+          name: libcamera-${{ needs.setup.outputs.variant }}
+          path: shared/libcamera/library/0.7.0-${{ needs.setup.outputs.variant }}
 
       - name: Setup protoc
         uses: arduino/setup-protoc@v3
@@ -193,92 +186,57 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@1.97.1
         with:
           targets: x86_64-unknown-linux-gnu,aarch64-unknown-linux-gnu
 
-      # Installed directly rather than via mlugg/setup-zig@v1: that action
-      # still assumes zig's old tarball naming (zig-linux-x86_64-VERSION)
-      # and 404s on every release from 0.14.1 onward, which renamed to
-      # zig-x86_64-linux-VERSION. Also, zig 0.13.0 breaks turbojpeg-sys's
-      # CMake C-compiler-ABI detection when cross-compiling for aarch64
-      # ("CMake Error ... math cannot parse the expression: ' * 8'" -
-      # CMAKE_SIZEOF_VOID_P comes back empty) - 0.15.1 is confirmed working
-      # for this exact cross-compile.
+      # zig-linux-x86_64-VERSION naming (used by mlugg/setup-zig@v1) 404s from
+      # 0.14.1 onward, which renamed to zig-x86_64-linux-VERSION.
       - name: Setup zig (for cargo-zigbuild cross-compilation)
+        env:
+          ZIG_VERSION: "0.15.1"
+          ZIG_SHA256: "c61c5da6edeea14ca51ecd5e4520c6f4189ef5250383db33d01848293bfafe05"
         run: |
-          curl -sL https://ziglang.org/download/0.15.1/zig-x86_64-linux-0.15.1.tar.xz -o /tmp/zig.tar.xz
+          curl -sL "https://ziglang.org/download/${ZIG_VERSION}/zig-x86_64-linux-${ZIG_VERSION}.tar.xz" -o /tmp/zig.tar.xz
+          echo "${ZIG_SHA256}  /tmp/zig.tar.xz" | sha256sum -c -
           tar xf /tmp/zig.tar.xz -C /tmp
-          echo "/tmp/zig-x86_64-linux-0.15.1" >> "$GITHUB_PATH"
+          echo "/tmp/zig-x86_64-linux-${ZIG_VERSION}" >> "$GITHUB_PATH"
 
       - name: Install nasm (required by turbojpeg-sys)
         run: sudo apt-get update && sudo apt-get install -y nasm
 
       - name: Install cargo-zigbuild
-        run: cargo install cargo-zigbuild --locked
+        run: cargo install cargo-zigbuild@0.23.0 --locked
 
-      # amd64 is native to this runner - a plain `cargo build` avoids
-      # zigbuild's cross-compilation wrapper (zigcc), which confuses
-      # turbojpeg-sys's CMake bit-width detection when the "cross" target
-      # is actually the host architecture (CMake error: "ERROR-bit build").
-      # zigbuild is only needed for the genuinely cross-compiled arm64 build.
+      # amd64 is native to this runner - zigbuild's cross-compilation wrapper
+      # confuses turbojpeg-sys's CMake bit-width detection otherwise.
       - name: Build amd64
         run: cargo build --release --package=station --target=x86_64-unknown-linux-gnu
 
-      # Mirrors the FEATURES/GLIBC handling in
-      # software/station/bin/station/Makefile: yahboom-dogzilla-lite implies
-      # the ov5647 (libcamera) feature and, unless glibc is set explicitly,
-      # defaults to targeting glibc 2.36 (Raspberry Pi OS / Debian Bookworm).
-      # Pass glibc=2.31 for a Bullseye build instead. Each glibc target links
-      # against the libcamera built by build-libcamera for a matching base
-      # image and downloaded above (shared/libcamera/library/0.7.0-<variant>/
-      # - see shared/libcamera/Makefile) so the resulting binary only needs
-      # glibc symbols the target OS actually has.
       - name: Build arm64
         env:
-          FEATURES: ${{ inputs.features }}
-          GLIBC: ${{ inputs.glibc }}
+          FEATURES: ${{ needs.setup.outputs.features }}
+          GLIBC: ${{ needs.setup.outputs.glibc }}
+          VARIANT: ${{ needs.setup.outputs.variant }}
         run: |
           target=aarch64-unknown-linux-gnu
-          features="$FEATURES"
-          glibc="$GLIBC"
-          case ",$features," in
-            *,yahboom-dogzilla-lite,*)
-              case ",$features," in
-                *,ov5647,*) ;;
-                *) features="$features,ov5647" ;;
-              esac
-              glibc="${glibc:-2.36}"
-              ;;
-          esac
-          if [ -n "$glibc" ]; then
-            target="aarch64-unknown-linux-gnu.$glibc"
+          if [ -n "$GLIBC" ]; then
+            target="aarch64-unknown-linux-gnu.$GLIBC"
           fi
 
           cargo_features_flag=""
-          if [ -n "$features" ]; then
-            cargo_features_flag="--features $features"
+          if [ -n "$FEATURES" ]; then
+            cargo_features_flag="--features $FEATURES"
           fi
 
-          case ",$features," in
-            *,ov5647,*)
-              case "$glibc" in
-                2.36) variant=bookworm ;;
-                2.31) variant=bullseye ;;
-                *) echo "::error::ov5647/yahboom-dogzilla-lite requires glibc=2.36 or glibc=2.31 (got '$glibc')"; exit 1 ;;
-              esac
-              libcamera_dir="$PWD/shared/libcamera/library/0.7.0-$variant"
-              export PKG_CONFIG_PATH="$libcamera_dir/usr/lib/aarch64-linux-gnu/pkgconfig"
-              export PKG_CONFIG_ALLOW_CROSS=1
-              export LIBCAMERA_LIB_DIR="$libcamera_dir/usr/lib/aarch64-linux-gnu"
-              ;;
-          esac
+          if [ -n "$VARIANT" ]; then
+            libcamera_dir="$PWD/shared/libcamera/library/0.7.0-$VARIANT"
+            export PKG_CONFIG_PATH="$libcamera_dir/usr/lib/aarch64-linux-gnu/pkgconfig"
+            export PKG_CONFIG_ALLOW_CROSS=1
+            export LIBCAMERA_LIB_DIR="$libcamera_dir/usr/lib/aarch64-linux-gnu"
+          fi
 
           cargo zigbuild --release --package=station $cargo_features_flag --target="$target"
-          # Note: the glibc-version suffix (e.g. ".2.36") is a cargo-zigbuild
-          # extension for selecting the linked glibc version - Cargo itself
-          # doesn't know about it, so the output still lands under the plain
-          # target/aarch64-unknown-linux-gnu/release/, not a versioned dir.
 
       - name: Package tarballs
         run: |
@@ -312,7 +270,7 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@1.97.1
 
       - name: Install nasm (required by turbojpeg-sys)
         run: brew install nasm
@@ -334,7 +292,7 @@ jobs:
 
   create-release:
     name: Create GitHub Release
-    needs: [determine-version, build-linux, build-macos]
+    needs: [setup, build-linux, build-macos]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -354,7 +312,7 @@ jobs:
       - name: Create release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ needs.determine-version.outputs.tag }}
+          TAG: ${{ needs.setup.outputs.tag }}
         run: |
           PRERELEASE_FLAG=""
           if [ "${{ inputs.prerelease }}" = "true" ]; then

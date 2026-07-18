@@ -17,26 +17,16 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let target = env::var("TARGET").unwrap_or_default();
     let host = env::var("HOST").unwrap_or_default();
-    // Any target/host mismatch is a cross-compile, not just building from a
-    // non-Linux host (e.g. a Linux amd64 CI runner cross-compiling to Linux
-    // arm64 is cross-compiling too, and must link the pre-built wrapper
-    // rather than compiling wrapper.cpp against the checked-in .pc files,
-    // whose Cflags bake in an absolute path from wherever they were built.
+    // A same-arch cross-compile (e.g. amd64 CI -> arm64) still needs the
+    // pre-built wrapper, not just non-Linux hosts.
     let is_cross = target != host;
 
-    // The checked-in .pc files bake in an absolute path from wherever the
-    // vendored libcamera artifacts were originally built (e.g.
-    // /Users/<someone>/...), which is wrong on any other machine. When
-    // LIBCAMERA_LIB_DIR points at those vendored artifacts (set by the
-    // Makefile/CI whenever the ov5647 feature is on), derive the include
-    // dir from it instead of trusting pkg-config's Cflags. Falls back to
-    // pkg-config's paths for a genuine native build against a system
-    // libcamera-dev install (e.g. apt-installed on a Pi), where
-    // LIBCAMERA_LIB_DIR won't be set.
-    // libcamera's own meson.build installs public headers under
-    // <includedir>/libcamera/libcamera/*.h (yes, "libcamera" twice), so the
-    // -I path needs that extra segment for `#include <libcamera/foo.h>` to
-    // resolve.
+    // The checked-in .pc files bake in an absolute Cflags path from wherever
+    // the vendored artifacts were built, so derive the include dir from
+    // LIBCAMERA_LIB_DIR instead when it's set. Falls back to pkg-config's
+    // paths for a native build against a system libcamera-dev install.
+    // libcamera installs public headers under <includedir>/libcamera/libcamera,
+    // so the extra "libcamera" segment below is intentional.
     let vendored_include_dir = env::var("LIBCAMERA_LIB_DIR").ok().and_then(|lib_dir| {
         Path::new(&lib_dir)
             .parent()
@@ -79,11 +69,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     if vendored_include_dir.is_none() {
-        // pkg-config's link_paths come from the same .pc Cflags/Libs as
-        // include_paths above; when we're using the vendored artifacts the
-        // real search path is added via LIBCAMERA_LIB_DIR below instead, so
-        // skip these to avoid a bogus "unable to open library directory"
-        // linker warning for the baked-in path.
+        // Same baked-in-path issue as above; LIBCAMERA_LIB_DIR below covers
+        // the vendored case instead.
         for path in &libcamera.link_paths {
             println!("cargo:rustc-link-search=native={}", path.display());
         }
