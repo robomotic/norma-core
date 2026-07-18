@@ -46,7 +46,7 @@ BUILD_ENV := $(if $(HAS_LIBCAMERA),$(LIBCAMERA_ENV),)
 
 TARGET_ARM64 := $(if $(GLIBC),$(TARGET_ARM64_BASE).$(GLIBC),$(TARGET_ARM64_BASE))
 
-.PHONY: all build client build-macos build-arm64 build-amd64 clean help
+.PHONY: all build client build-macos build-arm64 build-amd64 clean help libcamera-preflight
 
 all: build
 
@@ -57,8 +57,19 @@ build: client
 	@echo "Binary built at: "
 	@realpath ../../../../target/release/$(BINARY_NAME)
 
+libcamera-preflight:
+	@if [ -n "$(HAS_LIBCAMERA)" ] && [ -z "$(LIBCAMERA_VARIANT)" ]; then \
+		echo "ov5647 requires GLIBC=2.36 or GLIBC=2.31 (got '$(GLIBC)')"; \
+		exit 1; \
+	fi
+	@if [ -n "$(HAS_LIBCAMERA)" ] && [ ! -d "$(LIBCAMERA_INSTALL_DIR)" ]; then \
+		echo "Missing $(LIBCAMERA_INSTALL_DIR)."; \
+		echo "Build it first: make -C $(WORKSPACE_ROOT)/shared/libcamera build-libcamera LIBCAMERA_VARIANT=$(LIBCAMERA_VARIANT)"; \
+		exit 1; \
+	fi
+
 # Build the station binary for ARM64 Linux
-build-arm64: client
+build-arm64: libcamera-preflight client
 	@echo "Building station for ARM64 Linux using cargo-zigbuild..."
 	ulimit -n 10240 && $(BUILD_ENV) cargo zigbuild $(CARGO_FLAGS) --target=$(TARGET_ARM64)
 	@echo "Binary built at: $(OUTPUT_DIR_ARM64)/$(BINARY_NAME)"
@@ -85,7 +96,6 @@ help:
 	@echo ""
 	@echo "Prerequisites:"
 	@echo "  cargo-zigbuild must be installed: cargo install cargo-zigbuild"
-	@echo "  For ov5647 feature: pre-built libcamera libraries at shared/libcamera/library/$(LIBCAMERA_VERSION)/"
 	@echo ""
 	@echo "Targets:"
 	@echo "  all         - Build binaries for both architectures (default)"
